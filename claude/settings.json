@@ -1,0 +1,282 @@
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(yarn install)",
+      "Bash(find:*)",
+      "Bash(mkdir:*)",
+      "Bash(npx tsc:*)",
+      "Bash(tree:*)",
+      "Bash(yarn build:*)",
+      "Bash(yarn build)",
+      "Bash(bun install)",
+      "Bash(yarn lint:*)",
+      "Bash(yarn lint)",
+      "Bash(git *)",
+      "Bash(grep *)",
+      "Bash(wc *)",
+      "Bash(ls *)",
+      "Bash(pwd *)",
+      "Bash(bun *)",
+      "mcp__Linear__get_attachment",
+      "mcp__Linear__list_comments",
+      "mcp__Linear__list_cycles",
+      "mcp__Linear__get_document",
+      "mcp__Linear__list_documents",
+      "mcp__Linear__extract_images",
+      "mcp__Linear__get_issue",
+      "mcp__Linear__list_issues",
+      "mcp__Linear__list_issue_statuses",
+      "mcp__Linear__get_issue_status",
+      "mcp__Linear__list_issue_labels",
+      "mcp__Linear__list_projects",
+      "mcp__Linear__get_project",
+      "mcp__Linear__list_project_labels",
+      "mcp__Linear__list_milestones",
+      "mcp__Linear__get_milestone",
+      "mcp__Linear__list_teams",
+      "mcp__Linear__get_team",
+      "mcp__Linear__list_users",
+      "mcp__Linear__get_user",
+      "mcp__Linear__search_documentation",
+      "mcp__Linear__list_project_updates",
+      "mcp__Linear__get_project_update"
+    ],
+    "defaultMode": "auto"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/peon-ping/peon.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/peon-ping/peon.sh",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/peon-ping/peon.sh",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/peon-ping/peon.sh",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/peon-ping/scripts/hook-handle-use.sh",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/peon-ping/scripts/hook-handle-rename.sh",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -n \"$SUPERSET_HOME_DIR\" ] && [ -x \"$SUPERSET_HOME_DIR/hooks/notify.sh\" ] && \"$SUPERSET_HOME_DIR/hooks/notify.sh\" || true"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/peon-ping/peon.sh",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -n \"$SUPERSET_HOME_DIR\" ] && [ -x \"$SUPERSET_HOME_DIR/hooks/notify.sh\" ] && \"$SUPERSET_HOME_DIR/hooks/notify.sh\" || true"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/peon-ping/peon.sh",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/peon-ping/peon.sh",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -n \"$SUPERSET_HOME_DIR\" ] && [ -x \"$SUPERSET_HOME_DIR/hooks/notify.sh\" ] && \"$SUPERSET_HOME_DIR/hooks/notify.sh\" || true"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/peon-ping/peon.sh",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -n \"$SUPERSET_HOME_DIR\" ] && [ -x \"$SUPERSET_HOME_DIR/hooks/notify.sh\" ] && \"$SUPERSET_HOME_DIR/hooks/notify.sh\" || true"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/peon-ping/peon.sh",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -n \"$SUPERSET_HOME_DIR\" ] && [ -x \"$SUPERSET_HOME_DIR/hooks/notify.sh\" ] && \"$SUPERSET_HOME_DIR/hooks/notify.sh\" || true"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/peon-ping/peon.sh",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "input=$(cat); cwd=$(echo \"$input\" | jq -r '.workspace.current_dir'); branch=$(cd \"$cwd\" 2>/dev/null && git -c gc.auto=0 rev-parse --abbrev-ref HEAD 2>/dev/null || echo ''); timestamp=$(date '+%d/%m/%y %l:%M:%S'); model=$(echo \"$input\" | jq -r '.model.display_name'); cu=$(echo \"$input\" | jq -r '.context_window.current_usage // empty'); if [ -n \"$cu\" ] && [ \"$cu\" != 'null' ]; then ctx_tokens=$(echo \"$input\" | jq -r '[.context_window.current_usage.input_tokens, .context_window.current_usage.cache_creation_input_tokens, .context_window.current_usage.cache_read_input_tokens] | map(. // 0) | add'); ctx_k=$(echo \"scale=0; $ctx_tokens / 1000\" | bc); else ctx_k=''; fi; ti=$(echo \"$input\" | jq -r '.context_window.total_input_tokens // 0'); to=$(echo \"$input\" | jq -r '.context_window.total_output_tokens // 0'); ti_k=$(echo \"scale=0; $ti / 1000\" | bc); to_k=$(echo \"scale=0; $to / 1000\" | bc); r5=$(echo \"$input\" | jq -r '.rate_limits.five_hour.used_percentage // empty'); r7=$(echo \"$input\" | jq -r '.rate_limits.seven_day.used_percentage // empty'); r5_at=$(echo \"$input\" | jq -r '.rate_limits.five_hour.resets_at // empty'); r7_at=$(echo \"$input\" | jq -r '.rate_limits.seven_day.resets_at // empty'); r5_str=''; r7_str=''; if [ -n \"$r5\" ]; then r5_str=$(printf '%.0f%%' \"$r5\"); if [ -n \"$r5_at\" ]; then r5_reset=$(date -r \"${r5_at%%.*}\" '+%d/%m %H:%M' 2>/dev/null); [ -n \"$r5_reset\" ] && r5_str=\"$r5_str $r5_reset\"; fi; fi; if [ -n \"$r7\" ]; then r7_str=$(printf '%.0f%%' \"$r7\"); if [ -n \"$r7_at\" ]; then r7_reset=$(date -r \"${r7_at%%.*}\" '+%d/%m %H:%M' 2>/dev/null); [ -n \"$r7_reset\" ] && r7_str=\"$r7_str $r7_reset\"; fi; fi; printf '\\xf0\\x9f\\x95\\x90 \\033[93m\\033[1m[%s]\\033[0m \\xf0\\x9f\\x93\\x82 \\033[95m\\033[1m%s\\033[0m' \"$timestamp\" \"$(basename \"$cwd\")\"; [ -n \"$branch\" ] && printf ' \\xf0\\x9f\\x8c\\xbf \\033[96m\\033[1m(%s)\\033[0m' \"$branch\"; printf ' \\xf0\\x9f\\xa4\\x96 \\033[92m\\033[1m[%s]\\033[0m' \"$model\"; [ -n \"$ctx_k\" ] && printf ' \\xf0\\x9f\\x93\\x8a \\033[94m\\033[1m[ctx: %sK]\\033[0m' \"$ctx_k\"; printf '\\n'; printf '\\xf0\\x9f\\x93\\xa5 \\033[93m\\033[1min: %sK\\033[0m \\xf0\\x9f\\x93\\xa4 \\033[96m\\033[1mout: %sK\\033[0m' \"$ti_k\" \"$to_k\"; [ -n \"$r5_str\" ] && printf ' \\xe2\\x8f\\xb3 \\033[92m\\033[1m[5h: %s]\\033[0m' \"$r5_str\"; [ -n \"$r7_str\" ] && printf ' \\xf0\\x9f\\x93\\x85 \\033[95m\\033[1m[7d: %s]\\033[0m' \"$r7_str\"; sid=$(echo \"$input\" | jq -r '.session_id // empty'); sname=$(echo \"$input\" | jq -r '.session_name // empty'); if [ -n \"$sid\" ]; then printf '\\n'; printf '\\xf0\\x9f\\x94\\x91 \\033[93m\\033[1m%s\\033[0m' \"$sid\"; [ -n \"$sname\" ] && printf ' \\xf0\\x9f\\x8f\\xb7 \\033[96m\\033[1m%s\\033[0m' \"$sname\"; fi; true"
+  },
+  "enabledPlugins": {
+    "commit-commands@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "coderabbit@claude-plugins-official": true,
+    "codex@openai-codex": true,
+    "caveman@caveman": true,
+    "warp@claude-code-warp": true
+  },
+  "extraKnownMarketplaces": {
+    "impeccable": {
+      "source": {
+        "source": "github",
+        "repo": "pbakaus/impeccable"
+      }
+    },
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
+      }
+    },
+    "caveman": {
+      "source": {
+        "source": "github",
+        "repo": "JuliusBrussee/caveman"
+      }
+    },
+    "claude-code-warp": {
+      "source": {
+        "source": "github",
+        "repo": "warpdotdev/claude-code-warp"
+      }
+    }
+  },
+  "alwaysThinkingEnabled": true,
+  "showThinkingSummaries": true,
+  "skipDangerousModePermissionPrompt": true,
+  "skipAutoPermissionPrompt": true
+}

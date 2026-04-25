@@ -1,0 +1,15 @@
+model = "gpt-5.4"
+personality = "pragmatic"
+model_reasoning_effort = "xhigh"
+plan_mode_reasoning_effort = "xhigh"
+
+# Per-machine bits (notify path, [projects.*] trust_level blocks) live in
+# ~/.codex/config.local.toml or are appended manually after install.
+# Codex does not support [include]; the installer does NOT symlink this file
+# to avoid clobbering your real machine config.
+
+[notice.model_migrations]
+gpt-5-codex = "gpt-5.3-codex"
+
+[plugins."github@openai-curated"]
+enabled = true

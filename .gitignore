@@ -1,0 +1,6 @@
+.DS_Store
+tmp/
+*.backup.*
+*.local
+codex/config.local.toml
+claude/settings.local.json

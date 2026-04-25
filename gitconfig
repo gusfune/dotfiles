@@ -1,0 +1,51 @@
+[user]
+	name = Gus Fune
+	email = gusfune@users.noreply.github.com
+[include]
+	path = ~/.gitconfig.local
+[github]
+	user = gusfune
+[color]
+	ui = auto
+[push]
+	default = simple
+	autoSetupRemote = true
+[pull]
+	rebase = true
+[fetch]
+	prune = true
+	all = true
+	writeCommitGraph = true
+[gc]
+	writeCommitGraph = true
+[rerere]
+	enabled = true
+	autoupdate = true
+[core]
+	excludesfile = ~/.gitignore
+	attributesfile = ~/.gitattributes
+	commitGraph = true
+	quotepath = on
+[help]
+	autocorrect = 1
+[init]
+	defaultBranch = main
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[alias]
+	unstage = reset HEAD --
+	staged = diff --cached
+	current-branch = symbolic-ref --short HEAD
+	upstream = !git config --get branch.$(git current-branch).remote || echo origin
+	pr = !gh pr create --web
+	co = checkout
+	sw = switch
+	br = branch
+	st = status
+	ci = commit
+	last = log -1 HEAD
+	amend = commit --amend --no-edit
+	clean-merged = !git branch --merged | grep -v '\\*' | grep -v master | grep -v main | xargs -n 1 git branch -d

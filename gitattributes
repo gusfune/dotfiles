@@ -1,0 +1,23 @@
+# Global gitattributes — applied to every repo via core.attributesfile.
+
+# Auto-detect text files; normalize line endings to LF in the repo.
+* text=auto eol=lf
+
+# Known text types.
+*.md       text diff=markdown
+*.json     text
+*.yaml     text
+*.yml      text
+*.toml     text
+*.sh       text eol=lf
+*.zsh      text eol=lf
+
+# Known binaries.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary

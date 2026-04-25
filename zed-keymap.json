@@ -1,0 +1,27 @@
+// Zed keymap — ~/.config/zed/keymap.json
+//
+// Note: Zed does NOT have a direct equivalent of VSCode's
+// `editor.action.insertSnippet` with `$CLIPBOARD` variable expansion.
+// The closest approximation uses `workspace::SendKeystrokes` to chain
+// copy + newline + typed text + paste. Timing-sensitive; works but feels hacky.
+//
+// If reliability matters more than muscle memory, use a Zed snippet in
+// ~/.config/zed/snippets/javascript.json with `$CLIPBOARD` — triggered by
+// typing the prefix + tab instead of a key combo.
+[
+  {
+    "context": "Editor && !VimWaiting && !menu",
+    "bindings": {
+      // ctrl-1 — copy selection, newline, wrap as console.log('<clipboard>')
+      "ctrl-1": [
+        "workspace::SendKeystrokes",
+        "cmd-c enter c o n s o l e . l o g ( shift-' cmd-v shift-' shift-9"
+      ],
+      // ctrl-2 — same but labeled: console.log('<clipboard>:', <clipboard>)
+      "ctrl-2": [
+        "workspace::SendKeystrokes",
+        "cmd-c enter c o n s o l e . l o g ( shift-' cmd-v : shift-' , space cmd-v shift-9"
+      ]
+    }
+  }
+]

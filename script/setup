@@ -1,0 +1,115 @@
+#!/bin/bash
+# Symlink everything in the repo root into $HOME (with the usual dotfile prefix).
+# Safe to re-run: existing symlinks are refreshed in place; real files are
+# replaced (the repo becomes source-of-truth).
+
+set -eo pipefail
+
+# Resolve repo root (handles symlinked invocations).
+if [[ -L "$0" ]]; then
+  SCRIPTSETUP="$(readlink "$0")"
+else
+  SCRIPTSETUP="$0"
+fi
+DOTFILESDIRREL="${SCRIPTSETUP%/*}"
+[[ "${DOTFILESDIRREL}" = "${SCRIPTSETUP}" ]] && DOTFILESDIRREL="."
+cd "${DOTFILESDIRREL}/.." || exit
+DOTFILESDIR=$(pwd -P)
+
+UNAME_S="$(uname -s)"
+[[ "${UNAME_S}" = "Darwin" ]] && export MACOS=1
+[[ "${UNAME_S}" = "Linux"  ]] && export LINUX=1
+
+# Editor config paths per OS.
+if [[ -n "${MACOS}" ]]; then
+  VSCODE="${HOME}/Library/Application Support/Code/User"
+  ZED="${HOME}/.config/zed"
+elif [[ -n "${LINUX}" ]]; then
+  VSCODE="${HOME}/.config/Code/User"
+  ZED="${HOME}/.config/zed"
+fi
+
+link_if_needed() {
+  local target="$1" source="$2"
+  [[ -d "${target%/*}" ]] || mkdir -p "${target%/*}"
+  if [[ "${target}" -ef "${source}" ]]; then
+    return
+  elif [[ -L "${target}" ]]; then
+    ln -sf "${source}" "${target}"
+  else
+    # Preserve any real file the user may have by backing it up once.
+    [[ -e "${target}" ]] && mv -v "${target}" "${target}.backup.$(date +%s)"
+    ln -svf "${source}" "${target}"
+  fi
+}
+
+# Walk repo root; symlink files into $HOME with a leading dot.
+for DOTFILE in *; do
+  HOMEFILE="${HOME}/.${DOTFILE}"
+  [[ -d "${DOTFILE}" ]] && DOTFILE="${DOTFILE}/" && IS_DIR=1 || IS_DIR=
+  DIRFILE="${DOTFILESDIR}/${DOTFILE}"
+
+  # Dirs and files we never auto-link at the root level.
+  case "${DOTFILE}" in
+    script/|claude/|codex/|zsh/|.git/|*.md|*.txt|LICENSE|Brewfile|vscode-extensions.txt)
+      continue
+      ;;
+  esac
+
+  # Special routing.
+  case "${DOTFILE}" in
+    gitconfig.local.macos)
+      [[ -z "${MACOS}" ]] && continue
+      HOMEFILE="${HOME}/.gitconfig.local"
+      ;;
+    vscode-settings.json)
+      [[ -z "${VSCODE}" ]] && continue
+      HOMEFILE="${VSCODE}/settings.json"
+      ;;
+    vscode-keybindings.json)
+      [[ -z "${VSCODE}" ]] && continue
+      HOMEFILE="${VSCODE}/keybindings.json"
+      ;;
+    zed-settings.json)
+      [[ -z "${ZED}" ]] && continue
+      HOMEFILE="${ZED}/settings.json"
+      ;;
+    zed-keymap.json)
+      [[ -z "${ZED}" ]] && continue
+      HOMEFILE="${ZED}/keymap.json"
+      ;;
+  esac
+
+  # Strip .sh suffix so zshrc.sh -> ~/.zshrc.
+  if [[ "${DOTFILE}" = *.sh ]]; then
+    HOMEFILE="${HOME}/.${DOTFILE%.sh}"
+  fi
+
+  if [[ -z "${IS_DIR}" ]]; then
+    link_if_needed "${HOMEFILE}" "${DIRFILE}"
+  fi
+done
+
+# Point ~/.dotfiles at the repo so scripts can resolve assets (e.g. zsh/).
+HOMEDOTFILES="${HOME}/.dotfiles"
+if ! [[ "${HOMEDOTFILES}" -ef "${DOTFILESDIR}" ]]; then
+  rm -f "${HOMEDOTFILES}"
+  ln -sf "${DOTFILESDIR}" "${HOMEDOTFILES}"
+fi
+
+# Shared AGENTS doc: Claude and Codex both read the same instructions.
+AGENTS_GLOBAL="${DOTFILESDIR}/AGENTS-GLOBAL.md"
+link_if_needed "${HOME}/.claude/CLAUDE.md" "${AGENTS_GLOBAL}"
+link_if_needed "${HOME}/.codex/AGENTS.md"  "${AGENTS_GLOBAL}"
+
+# Claude settings (safe: it's a full settings file in the repo).
+link_if_needed "${HOME}/.claude/settings.json" "${DOTFILESDIR}/claude/settings.json"
+
+# Codex config is intentionally NOT symlinked: the repo copy is a template
+# (missing per-machine notify path + [projects.*] trust blocks). Copy manually
+# on a new machine:
+#   cp "${DOTFILESDIR}/codex/config.toml" ~/.codex/config.toml
+# then add your notify + project trusts.
+
+echo
+echo "Done. New shell will pick up the new .zprofile / .zshrc."
