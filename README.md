@@ -85,6 +85,16 @@ shell), aliases (interactive only), and tool init. Split:
 `.zshrc` sources `.zprofile` at the top (guarded by `$HOMEBREW_PREFIX` check)
 to cover terminal emulators that skip login shells.
 
+## Maintenance
+
+See [`AGENTS.md`](./AGENTS.md) (also linked as `CLAUDE.md`) for:
+
+- File → install-target map
+- How to add new shell config / editor settings / Claude / Codex bits
+- Brewfile drift check
+- Sanitization rules before committing (this is a public repo)
+- Conventions and what *not* to do
+
 ## Licence
 
 MIT. See `LICENSE`.
