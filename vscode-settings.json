@@ -214,7 +214,7 @@
   "terminal.integrated.env.osx": {
     "FIG_NEW_SESSION": "1"
   },
-  "terminal.integrated.fontFamily": "\"Jetbrains Mono\"",
+  "terminal.integrated.fontFamily": "\"Hack Nerd Font\", \"Jetbrains Mono\"",
   "terminal.integrated.fontSize": 11,
   "terminal.integrated.lineHeight": 1.25,
   "terminal.integrated.shell.osx": "/bin/zsh",

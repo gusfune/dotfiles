@@ -13,9 +13,11 @@ tap "supabase/tap"                  # → supabase
 # ----- CLI tools -----
 brew "awscli"                       # AWS CLI
 brew "bash"                         # bash 5.x (macOS stock bash is 3.2)
+brew "cf-terraforming"              # Cloudflare config → Terraform converter
 brew "cloudflared"                  # Cloudflare tunnel client
 brew "curl"                         # curl with newer TLS / HTTP3
 brew "doppler"                      # Secrets manager
+brew "duti"                         # Set default apps for file types / URL schemes
 brew "gemini-cli"                   # Google Gemini CLI
 brew "gh"                           # GitHub CLI
 brew "git-filter-repo"              # Rewrite git history
@@ -23,6 +25,7 @@ brew "gnupg"                        # GPG
 brew "go"                           # Go toolchain
 brew "hf"                           # HuggingFace CLI
 brew "htop"                         # Process viewer
+brew "kimi-cli"                     # MoonshotAI Kimi CLI agent
 brew "llama.cpp"                    # Local LLM inference (GGUF models)
 brew "lsd"                          # `ls` replacement; aliased in zshrc
 brew "mas"                          # Mac App Store CLI
@@ -35,6 +38,7 @@ brew "python@3.12"                  # Python
 brew "rbenv"                        # Ruby version manager; sourced in zprofile
 brew "rclone"                       # Cloud storage sync
 brew "ripgrep"                      # `rg` — fast grep
+brew "sandvault"                    # Run AI agents in sandboxed macOS user account
 brew "stripe-cli"                   # Stripe CLI
 brew "swiftlint"                    # Swift linter (iOS / macOS native)
 brew "tfenv"                        # Terraform version manager
@@ -56,23 +60,24 @@ brew "supabase/tap/supabase"        # Supabase CLI
 # ----- GUI apps (casks) -----
 cask "1password"                    # Password manager
 cask "1password-cli"                # `op` CLI
+cask "autodesk-fusion"              # Fusion 360 — CAD
 cask "beekeeper-studio"             # SQL GUI
 cask "chatgpt"                      # ChatGPT desktop
 cask "claude"                       # Claude desktop
 cask "codex"                        # Codex desktop
-cask "cursor"                       # REMOVE: per user request
 cask "cyberduck"                    # S3 / SFTP GUI
 cask "docker-desktop"               # Docker
 cask "elgato-stream-deck"           # Stream Deck companion
 cask "figma"                        # Design
 cask "firefox"                      # Firefox stable channel
 cask "firefox@developer-edition"    # Firefox Developer Edition
+cask "font-hack-nerd-font"          # Terminal nerd font (icons / glyphs)
 cask "font-jetbrains-mono"          # Terminal/editor font
 cask "github"                       # GitHub Desktop (redundant with gh CLI + GitLens?)
 cask "google-chrome"                # Chrome
 cask "imageoptim"                   # Image compression
 cask "insta360-studio"              # Insta360 webcam driver
-cask "linear-linear"                # Linear desktop
+cask "linear"                       # Linear desktop
 cask "little-snitch"                # Network firewall
 cask "miro"                         # Whiteboard / diagramming
 cask "ngrok"                        # Tunnels (overlaps with tailscale + cloudflared?)
@@ -87,7 +92,6 @@ cask "sf-symbols"                   # Apple system icon reference
 cask "slack"                        # Slack
 cask "spotify"                      # Music
 cask "steam"                        # Games
-cask "superhuman"                   # Email
 cask "superset"                     # Superset desktop
 cask "tailscale-app"                # VPN mesh
 cask "the-unarchiver"               # Archives
