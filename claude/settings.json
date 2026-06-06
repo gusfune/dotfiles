@@ -275,6 +275,7 @@
       }
     }
   },
+  "effortLevel": "xhigh",
   "alwaysThinkingEnabled": true,
   "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,
