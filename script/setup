@@ -51,7 +51,7 @@ for DOTFILE in *; do
 
   # Dirs and files we never auto-link at the root level.
   case "${DOTFILE}" in
-    script/|claude/|codex/|zsh/|.git/|*.md|*.txt|LICENSE|Brewfile|vscode-extensions.txt)
+    script/|claude/|codex/|kimi-code/|zsh/|.git/|*.md|*.txt|LICENSE|Brewfile|vscode-extensions.txt)
       continue
       ;;
   esac
@@ -104,6 +104,12 @@ link_if_needed "${HOME}/.codex/AGENTS.md"  "${AGENTS_GLOBAL}"
 
 # Claude settings (safe: it's a full settings file in the repo).
 link_if_needed "${HOME}/.claude/settings.json" "${DOTFILESDIR}/claude/settings.json"
+
+# Kimi Code config (safe: no per-machine secrets — oauth entries are keyring
+# references; managed providers/models may be rewritten by Kimi on refresh).
+link_if_needed "${HOME}/.kimi-code/config.toml"   "${DOTFILESDIR}/kimi-code/config.toml"
+link_if_needed "${HOME}/.kimi-code/tui.toml"      "${DOTFILESDIR}/kimi-code/tui.toml"
+link_if_needed "${HOME}/.kimi-code/statusline.sh" "${DOTFILESDIR}/kimi-code/statusline.sh"
 
 # Codex config is intentionally NOT symlinked: the repo copy is a template
 # (missing per-machine notify path + [projects.*] trust blocks). Copy manually

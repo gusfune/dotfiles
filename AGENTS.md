@@ -38,6 +38,9 @@ into `$HOME` by `script/setup`. Modeled on
 | `zed-settings.json` | `~/.config/zed/settings.json` |
 | `zed-keymap.json` | `~/.config/zed/keymap.json` |
 | `claude/settings.json` | `~/.claude/settings.json` |
+| `kimi-code/config.toml` | `~/.kimi-code/config.toml` |
+| `kimi-code/tui.toml` | `~/.kimi-code/tui.toml` |
+| `kimi-code/statusline.sh` | `~/.kimi-code/statusline.sh` (referenced by `tui.toml` `[status_line]`) |
 | `AGENTS-GLOBAL.md` | both `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md` |
 | `codex/config.toml` | **NOT** symlinked — copy manually (template) |
 | `Brewfile` | not symlinked (run `brew bundle` against repo path) |
@@ -74,6 +77,20 @@ trust blocks live in real `~/.codex/config.toml`). To update the template:
 cp ~/.codex/config.toml ~/Developer/dotfiles/codex/config.toml
 # then manually remove [projects."/Users/gus/..."] blocks + notify line
 ```
+
+### Adding new Kimi Code config
+
+`kimi-code/config.toml` and `kimi-code/tui.toml` are symlinked, so edits flow
+back automatically. Validate TOML edits before reloading:
+
+```bash
+kimi doctor config ~/Developer/dotfiles/kimi-code/config.toml
+kimi doctor tui    ~/Developer/dotfiles/kimi-code/tui.toml
+# then /reload in the TUI (covers both files)
+```
+
+Kimi rewrites the managed `[providers.*]` / `[models.*]` sections on refresh —
+expect occasional churn in the repo file, same as `claude/settings.json`.
 
 ### Refreshing Brewfile
 
@@ -118,7 +135,7 @@ Quick scan:
 
 ```bash
 grep -rEn "token|apiKey|apiToken|secret|/Users/gus|machineId" \
-  ~/Developer/dotfiles/{vscode-*,claude,codex,gitconfig*}
+  ~/Developer/dotfiles/{vscode-*,claude,codex,kimi-code,gitconfig*}
 ```
 
 ## Adding a new dotfile to the system

@@ -1,0 +1,13 @@
+# ~/.kimi-code/tui.toml — symlinked from the dotfiles repo by script/setup.
+theme = "dark"
+
+[editor]
+command = ""
+
+[notifications]
+enabled = true
+notification_condition = "unfocused"
+
+# Port of the custom statusLine from claude/settings.json.
+[status_line]
+command = "~/.kimi-code/statusline.sh"
