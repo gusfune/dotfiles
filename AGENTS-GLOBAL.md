@@ -49,7 +49,7 @@ agents pick it up. Project-level `AGENTS.md` / `CLAUDE.md` override these.
 ## Bun preference (monorepos using it)
 
 - `bun`, `bun install`, `bun run`, `bun test`, `bun build`.
-- Prefer Bun built-ins: `Bun.serve`, `Bun.sql`, `bun:sqlite`, `Bun.redis`, `Bun.$` over `execa`, built-in `WebSocket` over `ws`. Auto-`.env` load (no `dotenv`).
+- Prefer Bun built-ins: `Bun.serve`, `Bun.sql`, `bun:sqlite`, `Bun.redis`, `Bun.$` over `execa`, built-in `WebSocket` over `ws`. No `dotenv`, no local `.env` files — env vars come from the Doppler CLI (`doppler run -- <cmd>`).
 - Don't use npm / yarn / pnpm unless the project explicitly does.
 
 ## Dates
@@ -59,6 +59,7 @@ agents pick it up. Project-level `AGENTS.md` / `CLAUDE.md` override these.
 ## Library hygiene
 
 Before adding a new dependency:
+
 - Nothing similar already in the codebase.
 - Updated in the last 6 months.
 - Small footprint, minimal transitive deps.
@@ -121,7 +122,7 @@ Before adding a new dependency:
 
 ## Comments & docs
 
-- Self-explanatory code first. Comments explain *why*, not *what*.
+- Self-explanatory code first. Comments explain _why_, not _what_.
 - TSDoc for exported functions (`@param`, `@returns`).
 - AI-generated blocks: mark with a JSDoc noting AI generation + prompt context. `// @see <url>` when lifting an idea from an article.
 - Update README when behaviour changes.
