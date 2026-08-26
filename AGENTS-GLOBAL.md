@@ -89,6 +89,14 @@ Before adding a new dependency:
 - Assign self, request CODEOWNERS.
 - Include a **Session prompts** collapsible at the end — verbatim user prompts, skip trivial confirmations, redact secrets as `[REDACTED]`.
 
+## Docker sandboxes (sbx)
+
+- Inside a sandbox (`IS_SANDBOX=1`), git **and** `gh` already work — the proxy injects credentials at the network layer.
+- **Never run `gh auth login`.** A `gho_sbxproxymanaged…` `GH_TOKEN` is the expected sentinel, not a broken token. `gh api user` is the only real check.
+- Push and open PRs from inside the sandbox. Don't tell me to do it from the host.
+- If `gh` genuinely can't reach the API, run `~/.dotfiles/script/sbx-bootstrap` — it prints the exact host command needed.
+- Never add shell completions to `/etc/sandbox-persistent.sh`. It's sourced before every command; completions break the shell into silent no-output failures.
+
 ## Linear
 
 - Never move tasks to "In Review" or "Done" — GitHub PRs transition those automatically.

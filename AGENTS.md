@@ -43,6 +43,7 @@ into `$HOME` by `script/setup`. Modeled on
 | `kimi-code/statusline.sh` | `~/.kimi-code/statusline.sh` (referenced by `tui.toml` `[status_line]`) |
 | `AGENTS-GLOBAL.md` | both `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md` |
 | `codex/config.toml` | **NOT** symlinked — copy manually (template) |
+| `script/sbx-bootstrap` | not symlinked (run from repo or `~/.dotfiles/script/`) |
 | `Brewfile` | not symlinked (run `brew bundle` against repo path) |
 | `vscode-extensions.txt` | not symlinked (snapshot for restore via `xargs -L1 code --install-extension <`) |
 
@@ -91,6 +92,21 @@ kimi doctor tui    ~/Developer/dotfiles/kimi-code/tui.toml
 
 Kimi rewrites the managed `[providers.*]` / `[models.*]` sections on refresh —
 expect occasional churn in the repo file, same as `claude/settings.json`.
+
+### Sandbox (sbx) GitHub setup
+
+`script/sbx-bootstrap` is dual-mode and safe to re-run:
+
+```bash
+./script/sbx-bootstrap                  # on the host: seed the global github secret
+./script/sbx-bootstrap <sandbox-name>   # ...and patch a running sandbox too
+./script/sbx-bootstrap                  # inside a sandbox: verify / repair
+```
+
+`gh` needs **no login inside a sandbox** — the proxy injects credentials, so
+`GH_TOKEN` is a `gho_sbxproxymanaged…` sentinel and only `gh api user` proves
+it works. The global secret applies to sandboxes created after it's set; pass a
+sandbox name to fix an existing one immediately.
 
 ### Refreshing Brewfile
 
