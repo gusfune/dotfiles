@@ -44,7 +44,8 @@
       "mcp__Linear__list_project_updates",
       "mcp__Linear__get_project_update"
     ],
-    "defaultMode": "auto"
+    "defaultMode": "auto",
+    "blockReadsOutsideWorkingDirectories": false
   },
   "model": "opus",
   "hooks": {
@@ -310,5 +311,14 @@
   "theme": "dark",
   "autoCompactEnabled": true,
   "agentPushNotifEnabled": true,
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "modelSettings": {
+    "claude-fable-5": {
+      "effortLevel": "high"
+    },
+    "claude-fable-5-1": {
+      "effortLevel": "high"
+    }
+  },
+  "tui": "fullscreen"
 }
