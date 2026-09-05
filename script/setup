@@ -102,8 +102,10 @@ AGENTS_GLOBAL="${DOTFILESDIR}/AGENTS-GLOBAL.md"
 link_if_needed "${HOME}/.claude/CLAUDE.md" "${AGENTS_GLOBAL}"
 link_if_needed "${HOME}/.codex/AGENTS.md"  "${AGENTS_GLOBAL}"
 
-# Claude settings (safe: it's a full settings file in the repo).
-link_if_needed "${HOME}/.claude/settings.json" "${DOTFILESDIR}/claude/settings.json"
+# Claude settings are intentionally NOT symlinked: Claude rewrites the live
+# file with per-machine state (autoMode.environment names real repos + paths)
+# that must not land in this public repo. Copy manually, both ways.
+#   cp claude/settings.json ~/.claude/settings.json   # repo -> home
 
 # Kimi Code config (safe: no per-machine secrets — oauth entries are keyring
 # references; managed providers/models may be rewritten by Kimi on refresh).

@@ -37,7 +37,7 @@ into `$HOME` by `script/setup`. Modeled on
 | `vscode-keybindings.json` | `~/Library/Application Support/Code/User/keybindings.json` |
 | `zed-settings.json` | `~/.config/zed/settings.json` |
 | `zed-keymap.json` | `~/.config/zed/keymap.json` |
-| `claude/settings.json` | `~/.claude/settings.json` |
+| `claude/settings.json` | **NOT** symlinked — copy manually (both ways) |
 | `kimi-code/config.toml` | `~/.kimi-code/config.toml` |
 | `kimi-code/tui.toml` | `~/.kimi-code/tui.toml` |
 | `kimi-code/statusline.sh` | `~/.kimi-code/statusline.sh` (referenced by `tui.toml` `[status_line]`) |
@@ -69,9 +69,21 @@ to the repo file — the cp is a no-op and you can edit the repo file directly.
 
 ### Adding new Claude / Codex config
 
-`claude/settings.json` is symlinked, so edits flow back automatically.
-`codex/config.toml` is **not** symlinked (per-machine `notify` + `[projects.*]`
-trust blocks live in real `~/.codex/config.toml`). To update the template:
+Neither is symlinked — both are copied by hand, in both directions.
+
+`claude/settings.json`: Claude rewrites the live file with per-machine state
+(`autoMode.environment` names real repos and worktree paths, `modelSettings`
+churn), none of which belongs in a public repo.
+
+```bash
+cp ~/Developer/dotfiles/claude/settings.json ~/.claude/settings.json  # repo -> home
+cp ~/.claude/settings.json ~/Developer/dotfiles/claude/settings.json  # home -> repo
+# then drop autoMode.environment + anything naming a private repo or /Users/gus path
+```
+
+`codex/config.toml` is **not** symlinked either (per-machine `notify` +
+`[projects.*]` trust blocks live in real `~/.codex/config.toml`). To update the
+template:
 
 ```bash
 # strip machine bits, keep general config
@@ -91,7 +103,8 @@ kimi doctor tui    ~/Developer/dotfiles/kimi-code/tui.toml
 ```
 
 Kimi rewrites the managed `[providers.*]` / `[models.*]` sections on refresh —
-expect occasional churn in the repo file, same as `claude/settings.json`.
+expect occasional churn in the repo file. Unlike `claude/settings.json`, these
+are symlinked, so that churn lands in the repo on its own.
 
 ### Sandbox (sbx) GitHub setup
 
@@ -143,6 +156,7 @@ Before committing, scan for:
 |------|----------------|------------|
 | API tokens / keys | `vscode-settings.json`, `claude/settings.json` | grep for `token`, `apiKey`, `apiToken`, `secret` — strip |
 | `/Users/gus/` paths | `claude/settings.json`, `vscode-settings.json` | replace with `~/` or `$HOME` if portable |
+| Per-machine auto-mode env | `claude/settings.json` | strip `permissions`-adjacent `autoMode.environment` — it names real repos + worktree paths |
 | Machine IDs | `gitconfig` (`[coderabbit] machineId`), VSCode `sync.gist` | omit; they regen per machine |
 | Per-project trust blocks | `codex/config.toml` | strip `[projects."/Users/gus/..."]` |
 | Personal email / noreply | `gitconfig` | noreply email is fine; real email up to you |
@@ -173,7 +187,7 @@ grep -rEn "token|apiKey|apiToken|secret|/Users/gus|machineId" \
 
 ## What NOT to do
 
-- Don't symlink `codex/config.toml` from the installer — it would clobber the per-machine `notify` path and `[projects.*]` trust blocks.
+- Don't symlink `claude/settings.json` or `codex/config.toml` from the installer — it would clobber the per-machine `notify` path and `[projects.*]` trust blocks.
 - Don't commit `.DS_Store`, `tmp/`, `*.backup.*` — `.gitignore` covers these but double-check `git status` before commit.
 - Don't run `./script/setup` blindly on a machine where you've manually customized `~/.zshrc` etc. — the installer backs up real files to `<file>.backup.<ts>`, but you'll lose the active config until you merge by hand.
 - Don't add Claude/Codex hooks paths with absolute `/Users/gus/...` — use `~/` so the file works on any machine.
