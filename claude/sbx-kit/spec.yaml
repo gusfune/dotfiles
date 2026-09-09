@@ -1,0 +1,34 @@
+schemaVersion: "2"
+kind: mixin
+name: gus-claude-prefs
+# Everything here lands in ~/.claude, which only Claude Code reads. On any
+# other base agent the kit is inert.
+requires:
+  agent: claude
+displayName: Personal Claude Code prefs
+description: Ships ~/.claude/statusline.sh and merges ~/.claude/sbx-prefs.json into ~/.claude/settings.json so a sandbox Claude renders the same status line and model prefs as the host. jq merge, every other key preserved.
+agentInstructions:
+  content: |
+    ## Personal prefs
+
+    This sandbox merges the operator's Claude Code prefs (status line, model,
+    effort) from ~/.claude/sbx-prefs.json into ~/.claude/settings.json at
+    image build. Do not edit either file.
+setup:
+  install:
+    - command: |
+        set -e
+        d=/home/agent/.claude
+        mkdir -p "$d"
+        f="$d/settings.json"
+        [ -f "$f" ] || echo '{}' > "$f"
+        # Recursive merge: prefs win on conflict, seeded keys the prefs do not
+        # name stay. Temp file in the same dir so the mv is an atomic rename.
+        tmp=$(mktemp -p "$d")
+        jq -s '.[0] * .[1]' "$f" "$d/sbx-prefs.json" > "$tmp"
+        mv "$tmp" "$f"
+        # Shipped files arrive 0644; an unexecutable status line renders nothing.
+        chmod +x "$d/statusline.sh"
+        chown -R agent:agent "$d"
+      user: "0"
+      description: Merge sbx-prefs.json into ~/.claude/settings.json and make statusline.sh executable

@@ -23,29 +23,30 @@ into `$HOME` by `script/setup`. Modeled on
 
 ## File → install-target map
 
-| Repo file | Symlinked to |
-|-----------|--------------|
-| `zshenv.sh` | `~/.zshenv` |
-| `zprofile.sh` | `~/.zprofile` |
-| `zshrc.sh` | `~/.zshrc` |
-| `zsh/dracula-highlight.zsh` | sourced from `zshrc.sh` via `~/.dotfiles/zsh/...` |
-| `gitconfig` | `~/.gitconfig` |
-| `gitconfig.local.macos` | `~/.gitconfig.local` (macOS only) |
-| `gitignore` | `~/.gitignore` |
-| `gitattributes` | `~/.gitattributes` |
-| `vscode-settings.json` | `~/Library/Application Support/Code/User/settings.json` |
-| `vscode-keybindings.json` | `~/Library/Application Support/Code/User/keybindings.json` |
-| `zed-settings.json` | `~/.config/zed/settings.json` |
-| `zed-keymap.json` | `~/.config/zed/keymap.json` |
-| `claude/settings.json` | **NOT** symlinked — copy manually (both ways) |
-| `kimi-code/config.toml` | `~/.kimi-code/config.toml` |
-| `kimi-code/tui.toml` | `~/.kimi-code/tui.toml` |
-| `kimi-code/statusline.sh` | `~/.kimi-code/statusline.sh` (referenced by `tui.toml` `[status_line]`) |
-| `AGENTS-GLOBAL.md` | both `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md` |
-| `codex/config.toml` | **NOT** symlinked — copy manually (template) |
-| `script/sbx-bootstrap` | not symlinked (run from repo or `~/.dotfiles/script/`) |
-| `Brewfile` | not symlinked (run `brew bundle` against repo path) |
-| `vscode-extensions.txt` | not symlinked (snapshot for restore via `xargs -L1 code --install-extension <`) |
+| Repo file                   | Symlinked to                                                                                                              |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `zshenv.sh`                 | `~/.zshenv`                                                                                                               |
+| `zprofile.sh`               | `~/.zprofile`                                                                                                             |
+| `zshrc.sh`                  | `~/.zshrc`                                                                                                                |
+| `zsh/dracula-highlight.zsh` | sourced from `zshrc.sh` via `~/.dotfiles/zsh/...`                                                                         |
+| `gitconfig`                 | `~/.gitconfig`                                                                                                            |
+| `gitconfig.local.macos`     | `~/.gitconfig.local` (macOS only)                                                                                         |
+| `gitignore`                 | `~/.gitignore`                                                                                                            |
+| `gitattributes`             | `~/.gitattributes`                                                                                                        |
+| `vscode-settings.json`      | `~/Library/Application Support/Code/User/settings.json`                                                                   |
+| `vscode-keybindings.json`   | `~/Library/Application Support/Code/User/keybindings.json`                                                                |
+| `zed-settings.json`         | `~/.config/zed/settings.json`                                                                                             |
+| `zed-keymap.json`           | `~/.config/zed/keymap.json`                                                                                               |
+| `claude/settings.json`      | **NOT** symlinked — copy manually (both ways)                                                                             |
+| `claude/sbx-kit/`           | not symlinked — an sbx mixin kit, passed to `sbx run --kit` (see [Sandbox (sbx) Claude prefs](#sandbox-sbx-claude-prefs)) |
+| `kimi-code/config.toml`     | `~/.kimi-code/config.toml`                                                                                                |
+| `kimi-code/tui.toml`        | `~/.kimi-code/tui.toml`                                                                                                   |
+| `kimi-code/statusline.sh`   | `~/.kimi-code/statusline.sh` (referenced by `tui.toml` `[status_line]`)                                                   |
+| `AGENTS-GLOBAL.md`          | both `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`                                                                       |
+| `codex/config.toml`         | **NOT** symlinked — copy manually (template)                                                                              |
+| `script/sbx-bootstrap`      | not symlinked (run from repo or `~/.dotfiles/script/`)                                                                    |
+| `Brewfile`                  | not symlinked (run `brew bundle` against repo path)                                                                       |
+| `vscode-extensions.txt`     | not symlinked (snapshot for restore via `xargs -L1 code --install-extension <`)                                           |
 
 ## Routine maintenance
 
@@ -121,6 +122,46 @@ are symlinked, so that churn lands in the repo on its own.
 it works. The global secret applies to sandboxes created after it's set; pass a
 sandbox name to fix an existing one immediately.
 
+### Sandbox (sbx) Claude prefs
+
+Docker Sandboxes never import `~/.claude`: the VM gets a settings.json seeded
+by the built-in claude kit, and only `~/.claude/skills` is mounted. So the
+status line, model and effort level differ inside a sandbox unless a kit
+carries them. `claude/sbx-kit/` is that kit (modelled on
+`docker/sbx-kits-contrib/claude-sbx-statusline`):
+
+| File                                | Role                                                                                                                                          |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `spec.yaml`                         | mixin, `requires.agent: claude`; the `install` step jq-merges the prefs into `~/.claude/settings.json` as root and `chmod +x` the status line |
+| `files/home/.claude/sbx-prefs.json` | the subset of `claude/settings.json` to carry: `statusLine`, `model`, `effortLevel`, thinking flags, `theme`, `tui`, `env`                    |
+| `files/home/.claude/statusline.sh`  | the host statusLine one-liner as a script, with epoch formatting that works on GNU, uutils and BSD `date`                                     |
+
+Launch with the `sbxme` function from `zshrc.sh`. It names both the repo kit
+and this one, because the repo launcher drops its own `--kit` when one is
+passed:
+
+```bash
+sbxme            # repo dir with .docker/sandbox.sh: repo kit + prefs kit
+sbxme codex      # any agent name, flags pass through
+```
+
+If `sbx` rejects the kit path (`kit.allowedSources` is a prefix list), allow
+the dotfiles checkout once:
+
+```bash
+sbx settings set kit.allowedSources '["docker.io/","./","/Users/<you>/Developer/dotfiles/"]'
+```
+
+Hooks are **not** carried on purpose: peon-ping needs macOS audio, the Superset
+and Orca hooks check for host-only paths and no-op in the VM. Plugins are not
+carried either (they need a marketplace install inside the VM). Keep
+`sbx-prefs.json` in step with `claude/settings.json` by hand, same as the
+settings file itself. Validate after any edit:
+
+```bash
+sbx kit validate ~/.dotfiles/claude/sbx-kit/
+```
+
 ### Refreshing Brewfile
 
 ```bash
@@ -152,14 +193,14 @@ diff <(sort ~/Developer/dotfiles/Brewfile | sed 's/ *#.*//' | grep -vE '^(#|$)')
 
 Before committing, scan for:
 
-| Risk | Where to check | What to do |
-|------|----------------|------------|
-| API tokens / keys | `vscode-settings.json`, `claude/settings.json` | grep for `token`, `apiKey`, `apiToken`, `secret` — strip |
-| `/Users/gus/` paths | `claude/settings.json`, `vscode-settings.json` | replace with `~/` or `$HOME` if portable |
-| Per-machine auto-mode env | `claude/settings.json` | strip `permissions`-adjacent `autoMode.environment` — it names real repos + worktree paths |
-| Machine IDs | `gitconfig` (`[coderabbit] machineId`), VSCode `sync.gist` | omit; they regen per machine |
-| Per-project trust blocks | `codex/config.toml` | strip `[projects."/Users/gus/..."]` |
-| Personal email / noreply | `gitconfig` | noreply email is fine; real email up to you |
+| Risk                      | Where to check                                             | What to do                                                                                 |
+| ------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| API tokens / keys         | `vscode-settings.json`, `claude/settings.json`             | grep for `token`, `apiKey`, `apiToken`, `secret` — strip                                   |
+| `/Users/gus/` paths       | `claude/settings.json`, `vscode-settings.json`             | replace with `~/` or `$HOME` if portable                                                   |
+| Per-machine auto-mode env | `claude/settings.json`                                     | strip `permissions`-adjacent `autoMode.environment` — it names real repos + worktree paths |
+| Machine IDs               | `gitconfig` (`[coderabbit] machineId`), VSCode `sync.gist` | omit; they regen per machine                                                               |
+| Per-project trust blocks  | `codex/config.toml`                                        | strip `[projects."/Users/gus/..."]`                                                        |
+| Personal email / noreply  | `gitconfig`                                                | noreply email is fine; real email up to you                                                |
 
 Quick scan:
 
@@ -181,7 +222,7 @@ grep -rEn "token|apiKey|apiToken|secret|/Users/gus|machineId" \
 
 - File naming: lowercase, no `.` prefix (installer adds it).
 - Shell files end in `.sh` so the installer strips the extension when symlinking.
-- Comments in shell files explain *why*, not *what* (see global rule in `AGENTS-GLOBAL.md`).
+- Comments in shell files explain _why_, not _what_ (see global rule in `AGENTS-GLOBAL.md`).
 - Brewfile inline comments: short purpose description, no "REVIEW:" or "kept because" prose. Aspire to one line that reads like a tooltip.
 - Commits: Conventional Commits + Gitmoji (e.g. `chore: ⬆️ refresh Brewfile`, `feat: ✨ add tmux config`).
 

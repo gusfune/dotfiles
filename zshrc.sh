@@ -58,6 +58,18 @@ alias cplns="sh ~/Developer/cpln.sh"
 alias deploy='bun run $HOME/Developer/staging/index.ts deploy'
 
 # Functions.
+
+# Launch a repo sandbox with the repo kit plus my Claude prefs kit
+# (claude/sbx-kit). The repo launcher drops its own --kit when one is passed,
+# so both are named here. Agent name stays the first positional: sbxme codex.
+sbxme() {
+  if [ -x .docker/sandbox.sh ]; then
+    .docker/sandbox.sh "$@" --kit ./.docker/sandbox-kit/ --kit "$HOME/.dotfiles/claude/sbx-kit/"
+  else
+    sbx run claude "$@" --kit "$HOME/.dotfiles/claude/sbx-kit/"
+  fi
+}
+
 clean_git() {
   for r in $(git for-each-ref refs/heads --format='%(refname:short)'); do
     if [ "x$(git merge-base master "$r")" = "x$(git rev-parse --verify "$r")" ] \
