@@ -17,6 +17,9 @@ path_append()  { [ -d "$1" ] || return; PATH=":${PATH//:$1:/:}"; PATH="${PATH#:}
 
 path_prepend "$HOME/.bun/bin"
 path_prepend "$HOME/.local/bin"
+# Must come after .local/bin: bin/claude shadows the real Claude Code
+# launcher so every session gets the Claude Plus system prompt.
+path_prepend "$HOME/.dotfiles/bin"
 export PATH
 
 # Atuin (shell history).

@@ -51,7 +51,7 @@ for DOTFILE in *; do
 
   # Dirs and files we never auto-link at the root level.
   case "${DOTFILE}" in
-    script/|claude/|codex/|kimi-code/|zsh/|.git/|*.md|*.txt|LICENSE|Brewfile|vscode-extensions.txt)
+    bin/|script/|claude/|codex/|kimi-code/|zsh/|.git/|*.md|*.txt|LICENSE|Brewfile|vscode-extensions.txt)
       continue
       ;;
   esac

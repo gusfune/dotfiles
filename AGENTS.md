@@ -37,6 +37,8 @@ into `$HOME` by `script/setup`. Modeled on
 | `vscode-keybindings.json`   | `~/Library/Application Support/Code/User/keybindings.json`                                                                |
 | `zed-settings.json`         | `~/.config/zed/settings.json`                                                                                             |
 | `zed-keymap.json`           | `~/.config/zed/keymap.json`                                                                                               |
+| `bin/claude`                | **NOT** symlinked — reached as `~/.dotfiles/bin` on `PATH` (see `zprofile.sh`); shadows the real Claude Code launcher    |
+| `claude/claude-plus.md`     | **NOT** symlinked — a repo-internal symlink into `claude/sbx-kit/files/home/.claude/`; read by absolute path            |
 | `claude/settings.json`      | **NOT** symlinked — copy manually (both ways)                                                                             |
 | `claude/sbx-kit/`           | not symlinked — an sbx mixin kit, passed to `sbx run --kit` (see [Sandbox (sbx) Claude prefs](#sandbox-sbx-claude-prefs)) |
 | `kimi-code/config.toml`     | `~/.kimi-code/config.toml`                                                                                                |
@@ -92,6 +94,54 @@ cp ~/.codex/config.toml ~/Developer/dotfiles/codex/config.toml
 # then manually remove [projects."/Users/gus/..."] blocks + notify line
 ```
 
+### Claude Plus system prompt
+
+`claude/claude-plus.md` is the system prompt every Claude Code session runs
+with. It **replaces** the built-in prompt; it is not appended to it. Source
+version: `claude-plus-1.0.md`.
+
+The canonical file lives at
+`claude/sbx-kit/files/home/.claude/claude-plus.md` and `claude/claude-plus.md`
+is a symlink to it. That looks backwards, and it is deliberate: `sbx kit
+validate` rejects a symlink that escapes the kit directory, so the real bytes
+have to sit inside the kit. One file, no drift, no hand-sync. Edit it through
+either path.
+
+**Why a PATH wrapper.** Claude Code has no persistent setting for a custom
+system prompt. Verified against the 2.1.269 binary, not from memory:
+
+- no `systemPrompt` / `systemPromptFile` key in `settings.json` (the
+  `"systemPrompt"` strings in the binary belong to cloud-session config)
+- no environment variable that takes a file
+- an **output style** is persistent but only swaps the role and tone block —
+  it appends around the harness sections, so it is not a replacement
+- `CLAUDE.md` appends as a user message
+
+`--system-prompt-file` is the only full replacement and it is per-invocation.
+So `bin/claude` shadows the real launcher on `PATH` and adds the flag every
+time. `zprofile.sh` puts `~/.dotfiles/bin` in front of `~/.local/bin` to make
+that happen.
+
+The flag is harmless on subcommands (`mcp`, `plugin`, `--version` were all
+tested), so the wrapper does no argument sniffing.
+
+```bash
+command -v claude                # ~/.dotfiles/bin/claude, not ~/.local/bin
+CLAUDE_PLUS=0 claude             # escape hatch: stock prompt, for A/B
+```
+
+Caveats worth knowing:
+
+- Anything invoking `/Users/gus/.local/bin/claude` by absolute path bypasses
+  the wrapper and gets the stock prompt, silently. `command -v claude` is the
+  check.
+- Subagents keep their own prompt; the flag sets the main agent's.
+- The YAML frontmatter at the top of the file is output-style schema. Under
+  `--system-prompt-file` it is inert — four lines of literal text. It is kept
+  for fidelity with the upstream file.
+- The `caveman` plugin's `SessionStart` hook tells Claude to drop articles;
+  Claude Plus says to keep them. Both are on. Expect the tone to wobble.
+
 ### Adding new Kimi Code config
 
 `kimi-code/config.toml` and `kimi-code/tui.toml` are symlinked, so edits flow
@@ -135,6 +185,7 @@ carries them. `claude/sbx-kit/` is that kit (modelled on
 | `spec.yaml`                         | mixin, `requires.agent: claude`; the `install` step jq-merges the prefs into `~/.claude/settings.json` as root and `chmod +x` the status line |
 | `files/home/.claude/sbx-prefs.json` | the subset of `claude/settings.json` to carry: `statusLine`, `model`, `effortLevel`, thinking flags, `theme`, `tui`, `env`                    |
 | `files/home/.claude/statusline.sh`  | the host statusLine one-liner as a script, with epoch formatting that works on GNU, uutils and BSD `date`                                     |
+| `files/home/.claude/claude-plus.md` | the Claude Plus system prompt. This is the **canonical copy**; `claude/claude-plus.md` is a symlink to it. Shipped, but only applied when the launcher passes `--system-prompt-file` |
 
 Launch with the `sbxme` function from `zshrc.sh`. It names both the repo kit
 and this one, because the repo launcher drops its own `--kit` when one is
@@ -151,6 +202,25 @@ the dotfiles checkout once:
 ```bash
 sbx settings set kit.allowedSources '["docker.io/","./","/Users/<you>/Developer/dotfiles/"]'
 ```
+
+The Claude Plus prompt needs a launcher flag, not just the file. A `kind:
+mixin` kit is forbidden from setting `sandbox.entrypoint`, so `sbxme` forwards
+`--system-prompt-file /home/agent/.claude/claude-plus.md` after the `--`
+separator that `sbx run` reserves for agent arguments. That is per-invocation,
+which is fine because `sbxme` is the only launcher — but a bare `sbx run
+claude` gets the stock prompt. The supported alternative, if that ever
+matters, is a second kit with `kind: sandbox` and `extends: claude` that owns
+the entrypoint outright.
+
+The `.docker/sandbox.sh` branch of `sbxme` is a per-repo launcher this repo
+does not own, so it is left alone; whether it forwards `--` is up to that
+script.
+
+The kit payload lives under a `.claude/` path, which the global `~/.gitignore`
+excludes everywhere. That silently kept `sbx-prefs.json` and `statusline.sh`
+out of every commit until it was caught — the repo's own `.gitignore` now
+re-includes the directory and its contents. If you add a file to the kit,
+check `git status --untracked-files=all` before you trust it.
 
 Hooks are **not** carried on purpose: peon-ping needs macOS audio, the Superset
 and Orca hooks check for host-only paths and no-op in the VM. Plugins are not
