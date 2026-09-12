@@ -4,3 +4,9 @@ tmp/
 *.local
 codex/config.local.toml
 claude/settings.local.json
+
+# The global ~/.gitignore excludes `.claude/` everywhere, which silently ate
+# the whole sbx kit payload — only spec.yaml was ever committed. Re-include it.
+# The directory has to be un-ignored before anything inside it can be.
+!claude/sbx-kit/files/home/.claude/
+!claude/sbx-kit/files/home/.claude/**
