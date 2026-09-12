@@ -37,7 +37,7 @@ into `$HOME` by `script/setup`. Modeled on
 | `vscode-keybindings.json`   | `~/Library/Application Support/Code/User/keybindings.json`                                                                |
 | `zed-settings.json`         | `~/.config/zed/settings.json`                                                                                             |
 | `zed-keymap.json`           | `~/.config/zed/keymap.json`                                                                                               |
-| `bin/claude`                | **NOT** symlinked — reached as `~/.dotfiles/bin` on `PATH` (see `zprofile.sh`); shadows the real Claude Code launcher    |
+| `bin/claude`                | **NOT** symlinked — reached as `~/.dotfiles/bin` on `PATH` (see `zshenv.sh` + `zprofile.sh`); shadows the real Claude Code launcher |
 | `claude/claude-plus.md`     | **NOT** symlinked — a repo-internal symlink into `claude/sbx-kit/files/home/.claude/`; read by absolute path            |
 | `claude/settings.json`      | **NOT** symlinked — copy manually (both ways)                                                                             |
 | `claude/sbx-kit/`           | not symlinked — an sbx mixin kit, passed to `sbx run --kit` (see [Sandbox (sbx) Claude prefs](#sandbox-sbx-claude-prefs)) |
@@ -57,6 +57,13 @@ into `$HOME` by `script/setup`. Modeled on
 - Login-once env / PATH → `zprofile.sh`
 - Always-set env (read by scripts, cron, GUI tools) → `zshenv.sh`
 - Interactive only (aliases, prompt, tool init like `atuin init zsh`) → `zshrc.sh`
+
+`path_prepend` and `path_append` are defined in `zshenv.sh`, not `zprofile.sh`.
+zsh sources `.zshenv` for every shell and `.zprofile` for login shells only, so
+a PATH entry that must also reach VS Code terminals, tmux panes, subshells and
+scripts belongs in `zshenv.sh`. `.zshenv` always runs first, which means a
+later `path_prepend` in `zprofile.sh` can bury an entry `zshenv.sh` put in
+front. When order matters, prepend in both files.
 
 ### Adding new VSCode setting
 
@@ -119,8 +126,20 @@ system prompt. Verified against the 2.1.269 binary, not from memory:
 
 `--system-prompt-file` is the only full replacement and it is per-invocation.
 So `bin/claude` shadows the real launcher on `PATH` and adds the flag every
-time. `zprofile.sh` puts `~/.dotfiles/bin` in front of `~/.local/bin` to make
-that happen.
+time.
+
+The prepend is in **two** files on purpose. `zshenv.sh` runs for every shell,
+which is what gets the wrapper into VS Code terminals, tmux panes, subshells
+and scripts — none of those are login shells. `zprofile.sh` then prepends
+`~/.local/bin`, which holds the real binary and would win, so it re-prepends
+`~/.dotfiles/bin` straight after. Remove either line and `claude` silently
+falls back to the stock prompt in some shells. Check all three:
+
+```bash
+zsh -lic 'command -v claude'   # login interactive
+zsh -ic  'command -v claude'   # non-login interactive
+zsh -c   'command -v claude'   # non-login non-interactive
+```
 
 The flag is harmless on subcommands (`mcp`, `plugin`, `--version` were all
 tested), so the wrapper does no argument sniffing.
@@ -135,6 +154,9 @@ Caveats worth knowing:
 - Anything invoking `/Users/gus/.local/bin/claude` by absolute path bypasses
   the wrapper and gets the stock prompt, silently. `command -v claude` is the
   check.
+- The fix is zsh-only. A `bash` shell reads neither `.zshenv` nor `.zprofile`,
+  so `bash -lc claude` reaches the real binary. This repo ships no bash config
+  and zsh is the login shell, so the gap is accepted, not fixed.
 - Subagents keep their own prompt; the flag sets the main agent's.
 - The YAML frontmatter at the top of the file is output-style schema. Under
   `--system-prompt-file` it is inert — four lines of literal text. It is kept
