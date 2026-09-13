@@ -146,8 +146,13 @@ tested), so the wrapper does no argument sniffing.
 
 ```bash
 command -v claude                # ~/.dotfiles/bin/claude, not ~/.local/bin
-CLAUDE_PLUS=0 claude             # escape hatch: stock prompt, for A/B
+~/.local/bin/claude              # stock prompt, if you ever need to compare
 ```
+
+The wrapper had a `CLAUDE_PLUS=0` escape hatch for the A/B against the stock
+prompt. The A/B is settled, so the switch is gone: one code path, no env var
+that can silently turn the prompt off. The real binary by absolute path still
+gives you the stock prompt.
 
 Caveats worth knowing:
 

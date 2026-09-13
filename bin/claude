@@ -4,10 +4,13 @@
 # is the only full replacement, and it is per-invocation. So we shadow the real
 # binary on PATH (see path_prepend in zprofile.sh) and add the flag every time.
 #
-# Escape hatch:  CLAUDE_PLUS=0 claude   -> stock prompt, for A/B and debugging.
+# There is no opt-out switch. The A/B against the stock prompt is done and
+# Claude Plus won; if you ever want the stock prompt back, call the real binary
+# by its absolute path.
 #
 # The flag is harmless on subcommands (mcp, plugin, update, --version all tested),
-# so no argument sniffing is needed. Caveman would approve: club first, ask later.
+# so no argument sniffing is needed. Ship of Theseus, but only the figurehead
+# was replaced.
 
 PROMPT="$HOME/.dotfiles/claude/claude-plus.md"
 
@@ -27,7 +30,7 @@ if [ -z "$REAL" ]; then
 fi
 
 # A missing or unreadable prompt file must not take Claude down with it.
-if [ "$CLAUDE_PLUS" = "0" ] || [ ! -r "$PROMPT" ]; then
+if [ ! -r "$PROMPT" ]; then
   exec "$REAL" "$@"
 fi
 
