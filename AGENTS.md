@@ -166,8 +166,12 @@ Caveats worth knowing:
 - The YAML frontmatter at the top of the file is output-style schema. Under
   `--system-prompt-file` it is inert — four lines of literal text. It is kept
   for fidelity with the upstream file.
-- The `caveman` plugin's `SessionStart` hook tells Claude to drop articles;
-  Claude Plus says to keep them. Both are on. Expect the tone to wobble.
+- The `caveman` plugin is off (`"caveman@caveman": false` in
+  `claude/settings.json`). Its `SessionStart` hook told Claude to drop
+  articles, which fights the Claude Plus rule to keep them — and Claude Plus
+  already does the compression the plugin was there for. Two cavemen, one
+  cave. Plugin state also lives in the live `~/.claude/settings.json`, which
+  is copied by hand, so flip it in both.
 
 ### Adding new Kimi Code config
 
