@@ -315,13 +315,36 @@ code --list-extensions > ~/Developer/dotfiles/vscode-extensions.txt
 ### Drift check
 
 ```bash
-# fresh dump to /tmp + diff against repo
 brew bundle dump --file=/tmp/Brewfile.current --force
-diff <(sort ~/Developer/dotfiles/Brewfile | sed 's/ *#.*//' | grep -vE '^(#|$)') \
-     <(sort /tmp/Brewfile.current)
+
+# Reduce both files to "<type> <name>" pairs, then compare.
+norm() {
+  awk '/^(tap|brew|cask|mas|vscode|npm) /{
+    t = $1
+    if (match($0, /"[^"]+"/)) print t, substr($0, RSTART, RLENGTH)
+  }' "$1" | LC_ALL=C sort -u
+}
+norm ~/Developer/dotfiles/Brewfile > /tmp/b.repo
+norm /tmp/Brewfile.current         > /tmp/b.live
+
+LC_ALL=C comm -23 /tmp/b.repo /tmp/b.live   # in repo, not installed
+LC_ALL=C comm -13 /tmp/b.repo /tmp/b.live   # installed, not in repo
 ```
 
-`<` = in repo only (uninstalled locally). `>` = installed only (missing from repo).
+Normalise **both** sides or the result is noise. Two traps, both hit for real:
+
+- A bare `diff` of the two files strips comments from the repo side only, so
+  every description line `brew bundle dump` writes shows up as a fake `>` hit.
+- `grep -oE '^(tap|brew|cask) "[^"]+"'` looks like the obvious way to extract
+  the pairs. On BSD grep (the macOS default) `-o` with a `^` anchor drops most
+  matches without erroring — it reported 99 of 199 repo entries and 72 of 244
+  installed ones, which is worse than useless because it invents drift in both
+  directions. Use `awk`. `LC_ALL=C` matters too: `comm` needs both inputs in
+  the same collation as the `sort` that produced them.
+
+The `mas` and `vscode` lines only appear if `mas` and `code` are on `PATH` when
+the dump runs; a missing CLI silently drops that whole section from the dump and
+every entry of that type then reads as "uninstalled".
 
 ## Sanitization (PUBLIC repo)
 
