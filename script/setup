@@ -51,7 +51,7 @@ for DOTFILE in *; do
 
   # Dirs and files we never auto-link at the root level.
   case "${DOTFILE}" in
-    bin/|script/|claude/|codex/|kimi-code/|zsh/|.git/|*.md|*.txt|LICENSE|Brewfile|vscode-extensions.txt)
+    bin/|script/|claude/|codex/|ghostty/|kimi-code/|zsh/|.git/|*.md|*.txt|LICENSE|Brewfile|vscode-extensions.txt)
       continue
       ;;
   esac
@@ -112,6 +112,11 @@ link_if_needed "${HOME}/.codex/AGENTS.md"  "${AGENTS_GLOBAL}"
 link_if_needed "${HOME}/.kimi-code/config.toml"   "${DOTFILESDIR}/kimi-code/config.toml"
 link_if_needed "${HOME}/.kimi-code/tui.toml"      "${DOTFILESDIR}/kimi-code/tui.toml"
 link_if_needed "${HOME}/.kimi-code/statusline.sh" "${DOTFILESDIR}/kimi-code/statusline.sh"
+
+# Ghostty. Only the XDG path is linked: Ghostty 1.3.1 also reads
+# ~/Library/Application Support/com.mitchellh.ghostty/config.ghostty, and two
+# live configs is one config too many.
+link_if_needed "${HOME}/.config/ghostty/config" "${DOTFILESDIR}/ghostty/config"
 
 # Codex config is intentionally NOT symlinked: the repo copy is a template
 # (missing per-machine notify path + [projects.*] trust blocks). Copy manually

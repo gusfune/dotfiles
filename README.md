@@ -40,6 +40,7 @@ Re-running `./script/setup` is idempotent.
 | `vscode-settings.json`, `vscode-keybindings.json` | VSCode user config                                                                       |
 | `vscode-extensions.txt`                           | `code --list-extensions` snapshot (restore manually)                                     |
 | `zed-settings.json`                               | Zed user config                                                                          |
+| `ghostty/config`                                  | Ghostty config — Dracula Pro (Van Helsing) palette, font, cursor                         |
 | `claude/settings.json`                            | Claude Code settings (hooks, permissions, plugins)                                       |
 | `claude/sbx-kit/`                                 | sbx mixin kit that carries the status line + model prefs into Docker Sandboxes (`sbxme`) |
 | `codex/config.toml`                               | Codex template (machine-specific bits excluded)                                          |
