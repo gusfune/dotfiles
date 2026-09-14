@@ -59,8 +59,10 @@ if [[ "$1" == "--chsh" ]]; then
   command -v zsh >/dev/null || die "zsh is not installed."
   zsh -lic 'true' || die "zsh login shell is not clean — fix that before chsh."
 
-  # Arch's zsh package ships no pacman hook for /etc/shells, and chsh refuses
-  # any shell that is not listed there.
+  # chsh refuses any shell that is not listed in /etc/shells. The entries may
+  # already be there (they appeared with the zsh package on Omarchy), so this
+  # is usually a no-op — but an unset-able login shell is not a failure worth
+  # risking for one grep.
   if ! grep -qxF "$(command -v zsh)" /etc/shells; then
     say "==> Adding $(command -v zsh) to /etc/shells"
     command -v zsh | sudo tee -a /etc/shells >/dev/null

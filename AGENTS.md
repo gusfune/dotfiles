@@ -331,9 +331,12 @@ deliberately separate so the installer never needs `sudo`.
 
 **Never `chsh` before `zsh -lic 'true'` is clean.** A broken `.zprofile` on a
 box you reach over SSH is not recoverable from a login prompt. The bootstrap
-script checks this for you; do not work around it. It also has to add zsh to
-`/etc/shells` first — Arch ships no pacman hook for that, and `chsh` refuses any
-shell not listed there.
+script checks this for you; do not work around it. It also checks `/etc/shells` first, because
+`chsh` refuses any shell not listed there. On this box the entries appeared once
+the `zsh` package was installed — `/etc/shells` is owned by `filesystem`, and
+nothing in `pacman -Ql zsh` or `/usr/share/libalpm/hooks` explains it — so the
+script's `tee` step is a guarded no-op here. Keep it: the guard costs nothing and
+the failure it prevents is a login shell you cannot set.
 
 #### How zsh coexists with Omarchy's bash layer
 
