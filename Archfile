@@ -13,6 +13,12 @@
 # ~/.local/zed.app), Homebrew/Linuxbrew, and the mise-managed tools (bun, claude,
 # codex, gh, node — see ~/.config/mise/config.toml). Listing them would show up
 # as permanent phantom drift in `arch-bundle check`.
+#
+# ghostty sits in the AUR section because that is where `dump` files a foreign
+# package, but no repo carries it for aarch64 — Arch builds it for x86_64 only.
+# Here it is a local package built from the upstream prebuilt binary, so
+# `arch-bundle install` on a fresh aarch64 box falls through to `yay -S ghostty`
+# and builds it from source, which is slow and needs zig.
 
 # ----- repo -----
 
@@ -124,3 +130,4 @@ zstd
 
 # ----- aur -----
 brave-origin-bin
+ghostty                 # terminal; local aarch64 build, see the note above
