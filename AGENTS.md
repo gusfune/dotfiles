@@ -37,6 +37,7 @@ into `$HOME` by `script/setup`. Modeled on
 | `vscode-keybindings.json`   | `~/Library/Application Support/Code/User/keybindings.json`                                                                |
 | `zed-settings.json`         | `~/.config/zed/settings.json`                                                                                             |
 | `zed-keymap.json`           | `~/.config/zed/keymap.json`                                                                                               |
+| `ghostty/config`            | `~/.config/ghostty/config`                                                                                                |
 | `bin/claude`                | **NOT** symlinked — reached as `~/.dotfiles/bin` on `PATH` (see `zshenv.sh` + `zprofile.sh`); shadows the real Claude Code launcher |
 | `claude/claude-plus.md`     | **NOT** symlinked — a repo-internal symlink into `claude/sbx-kit/files/home/.claude/`; read by absolute path            |
 | `claude/settings.json`      | **NOT** symlinked — copy manually (both ways)                                                                             |
@@ -188,6 +189,38 @@ Kimi rewrites the managed `[providers.*]` / `[models.*]` sections on refresh —
 expect occasional churn in the repo file. Unlike `claude/settings.json`, these
 are symlinked, so that churn lands in the repo on its own.
 
+### Ghostty config
+
+`ghostty/config` is symlinked to `~/.config/ghostty/config`. Edit the repo file.
+
+Ghostty 1.3.1 reads **four** candidate paths, not one:
+
+- `$XDG_CONFIG_HOME/ghostty/config`
+- `$XDG_CONFIG_HOME/ghostty/config.ghostty`
+- `~/Library/Application Support/com.mitchellh.ghostty/config`
+- `~/Library/Application Support/com.mitchellh.ghostty/config.ghostty`
+
+Only the first is tracked. The Application Support copy is deleted on purpose:
+it used to hold a byte-identical duplicate that loaded a second time and went
+stale the moment the XDG file changed. Do not recreate it. Theme installers
+(Dracula Pro ships a `.ghostty` file) will drop one there if you let them —
+paste the values into the repo file instead.
+
+The colours are Dracula Pro **Van Helsing**, matching `workbench.colorTheme` in
+`vscode-settings.json`. ANSI 0-7 come straight from the theme's `terminal.ansi*`
+values. Brights (8-15) are the Dracula Pro terminal brights, which are slightly
+lighter than the VS Code theme's — the oh-my-zsh prompt draws with `$fg_bold`,
+so those are the ones you actually see. Font and cursor mirror
+`terminal.integrated.*` in VS Code.
+
+Ghostty does not auto-reload. Hit `cmd+shift+,` or restart it. Verify a parse:
+
+```bash
+ghostty +show-config | grep -E "font-family|font-size|cursor-style|^background"
+```
+
+A bad key is dropped with a message on stderr, so a missing line is the tell.
+
 ### Sandbox (sbx) GitHub setup
 
 `script/sbx-bootstrap` is dual-mode and safe to re-run:
@@ -282,13 +315,36 @@ code --list-extensions > ~/Developer/dotfiles/vscode-extensions.txt
 ### Drift check
 
 ```bash
-# fresh dump to /tmp + diff against repo
 brew bundle dump --file=/tmp/Brewfile.current --force
-diff <(sort ~/Developer/dotfiles/Brewfile | sed 's/ *#.*//' | grep -vE '^(#|$)') \
-     <(sort /tmp/Brewfile.current)
+
+# Reduce both files to "<type> <name>" pairs, then compare.
+norm() {
+  awk '/^(tap|brew|cask|mas|vscode|npm) /{
+    t = $1
+    if (match($0, /"[^"]+"/)) print t, substr($0, RSTART, RLENGTH)
+  }' "$1" | LC_ALL=C sort -u
+}
+norm ~/Developer/dotfiles/Brewfile > /tmp/b.repo
+norm /tmp/Brewfile.current         > /tmp/b.live
+
+LC_ALL=C comm -23 /tmp/b.repo /tmp/b.live   # in repo, not installed
+LC_ALL=C comm -13 /tmp/b.repo /tmp/b.live   # installed, not in repo
 ```
 
-`<` = in repo only (uninstalled locally). `>` = installed only (missing from repo).
+Normalise **both** sides or the result is noise. Two traps, both hit for real:
+
+- A bare `diff` of the two files strips comments from the repo side only, so
+  every description line `brew bundle dump` writes shows up as a fake `>` hit.
+- `grep -oE '^(tap|brew|cask) "[^"]+"'` looks like the obvious way to extract
+  the pairs. On BSD grep (the macOS default) `-o` with a `^` anchor drops most
+  matches without erroring — it reported 99 of 199 repo entries and 72 of 244
+  installed ones, which is worse than useless because it invents drift in both
+  directions. Use `awk`. `LC_ALL=C` matters too: `comm` needs both inputs in
+  the same collation as the `sort` that produced them.
+
+The `mas` and `vscode` lines only appear if `mas` and `code` are on `PATH` when
+the dump runs; a missing CLI silently drops that whole section from the dump and
+every entry of that type then reads as "uninstalled".
 
 ## Sanitization (PUBLIC repo)
 

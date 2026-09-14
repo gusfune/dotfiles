@@ -1,0 +1,43 @@
+# Ghostty — Dracula Pro (Van Helsing).
+#
+# Colours match the VS Code theme of the same name; font and cursor match the
+# VS Code integrated terminal. A shell looks the same wherever it is opened.
+# Values verified against the dracula-pro-van-helsing.json shipped in the
+# Dracula Pro VS Code extension.
+
+# Hack Nerd Font Mono is the VS Code terminal's first choice and JetBrains Mono
+# is both its fallback and Zed's buffer font. Ghostty embeds Symbols Nerd Font
+# for icon glyphs regardless, so this is about letterforms, not tofu.
+font-family = "Hack Nerd Font Mono"
+font-family = "JetBrains Mono"
+font-size = 13
+
+# VS Code uses a line cursor that does not blink. A bar cursor also avoids the
+# old trap here: cursor-text and cursor-color were both #708CA9, which painted
+# the character under the block cursor in the cursor's own colour. Vlad could
+# not see himself in the mirror either.
+cursor-style = bar
+cursor-style-blink = false
+cursor-color = #F8F8F2
+
+background = #0B0D0F
+foreground = #F8F8F2
+selection-background = #414D58
+selection-foreground = #F8F8F2
+
+palette = 0=#22212C
+palette = 1=#FF9580
+palette = 2=#8AFF80
+palette = 3=#FFFF80
+palette = 4=#9580FF
+palette = 5=#FF80BF
+palette = 6=#80FFEA
+palette = 7=#F8F8F2
+palette = 8=#364049
+palette = 9=#FFAA99
+palette = 10=#A2FF99
+palette = 11=#FFFF99
+palette = 12=#AA99FF
+palette = 13=#FF99CC
+palette = 14=#99FFEE
+palette = 15=#FFFFFF

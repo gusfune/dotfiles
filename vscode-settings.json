@@ -207,7 +207,7 @@
   "stylelint.packageManager": "yarn",
   "tabnine.experimentalAutoImports": true,
   "tailwindCSS.emmetCompletions": true,
-  "terminal.external.osxExec": "Hyper.app",
+  "terminal.external.osxExec": "Ghostty.app",
   "terminal.integrated.confirmOnExit": true,
   "terminal.integrated.cursorBlinking": false,
   "terminal.integrated.cursorStyle": "line",

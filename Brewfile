@@ -73,6 +73,7 @@ cask "firefox"                      # Firefox stable channel
 cask "firefox@developer-edition"    # Firefox Developer Edition
 cask "font-hack-nerd-font"          # Terminal nerd font (icons / glyphs)
 cask "font-jetbrains-mono"          # Terminal/editor font
+cask "ghostty"                      # Terminal emulator
 cask "github"                       # GitHub Desktop (redundant with gh CLI + GitLens?)
 cask "google-chrome"                # Chrome
 cask "imageoptim"                   # Image compression
