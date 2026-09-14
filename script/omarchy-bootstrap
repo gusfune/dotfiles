@@ -1,0 +1,76 @@
+#!/bin/bash
+# Bring an Omarchy (Arch Linux + Hyprland) box up to what this repo assumes:
+# the Archfile packages, Oh My Zsh, the custom theme, and zsh as the login
+# shell. script/setup only makes symlinks — this is the imperative half, kept
+# separate so the installer itself never needs sudo. Safe to re-run.
+#
+#   ./script/omarchy-bootstrap           # packages + Oh My Zsh + theme
+#   ./script/omarchy-bootstrap --chsh    # ...and switch the login shell to zsh
+
+set -eo pipefail
+
+say()  { printf '\033[1m%s\033[0m\n' "$*"; }
+warn() { printf '\033[93m%s\033[0m\n' "$*" >&2; }
+die()  { printf '\033[91m%s\033[0m\n' "$*" >&2; exit 1; }
+
+DOTFILESDIR="$(cd "${0%/*}/.." && pwd -P)"
+
+command -v pacman >/dev/null || die "Not an Arch box — pacman not found."
+[[ -r /usr/share/omarchy/default/bash/env-bootstrap ]] || \
+  warn "This does not look like Omarchy; continuing anyway."
+
+say "==> Installing Archfile packages"
+"${DOTFILESDIR}/script/arch-bundle" install
+
+# Oh My Zsh. All three env vars are load-bearing:
+#   KEEP_ZSHRC=yes  or the installer moves our symlinked ~/.zshrc aside and
+#                   writes its own template, silently undoing script/setup
+#   CHSH=no         the login shell is switched below, after verification
+#   RUNZSH=no       don't drop into an interactive zsh mid-script
+if [[ -d "${HOME}/.oh-my-zsh" ]]; then
+  say "==> Oh My Zsh already installed"
+else
+  say "==> Installing Oh My Zsh"
+  RUNZSH=no CHSH=no KEEP_ZSHRC=yes sh -c \
+    "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+fi
+
+# dracula-pro is a paid theme, so it is deliberately not in this public repo.
+# .zshrc falls back to robbyrussell when it is missing, rather than letting omz
+# warn on every prompt.
+THEME="${HOME}/.oh-my-zsh/custom/themes/dracula-pro.zsh-theme"
+if [[ ! -r "${THEME}" ]]; then
+  warn "dracula-pro.zsh-theme is missing — .zshrc falls back to robbyrussell."
+  warn "  scp <mac>:~/.oh-my-zsh/custom/themes/dracula-pro.zsh-theme ${THEME}"
+fi
+
+# The Omarchy theme is symlinked into place by script/setup; this just applies
+# it. Idempotent — setting the current theme again is a no-op re-render.
+if command -v omarchy-theme-set >/dev/null; then
+  say "==> Applying the dracula-pro-van-helsing theme"
+  omarchy theme set dracula-pro-van-helsing || \
+    warn "Theme not applied. Run ./script/setup first so it is linked into place."
+fi
+
+if [[ "$1" == "--chsh" ]]; then
+  # Prove the login shell works BEFORE making it the login shell. A broken
+  # .zprofile on a box you reach over SSH is not fixable from a login prompt.
+  say "==> Verifying a clean zsh login shell"
+  command -v zsh >/dev/null || die "zsh is not installed."
+  zsh -lic 'true' || die "zsh login shell is not clean — fix that before chsh."
+
+  # Arch's zsh package ships no pacman hook for /etc/shells, and chsh refuses
+  # any shell that is not listed there.
+  if ! grep -qxF "$(command -v zsh)" /etc/shells; then
+    say "==> Adding $(command -v zsh) to /etc/shells"
+    command -v zsh | sudo tee -a /etc/shells >/dev/null
+  fi
+
+  chsh -s "$(command -v zsh)"
+  say "Login shell is now zsh. Log out and back in."
+else
+  say "==> Skipping chsh. Re-run with --chsh once you have checked:"
+  say "      zsh -lic 'command -v claude'   # should be ~/.dotfiles/bin/claude"
+fi
+
+say "Done."
