@@ -71,7 +71,7 @@ EOF
 # ------------------------------------------------------------------- host mode
 
 bootstrap_host() {
-  command -v gh  >/dev/null 2>&1 || die "gh not found. brew bundle --file=Brewfile"
+  command -v gh  >/dev/null 2>&1 || die "gh not found. brew bundle --file=Brewfile (or ./script/arch-bundle install)"
   command -v sbx >/dev/null 2>&1 || die "sbx not found — is the Docker sandbox CLI installed?"
 
   local token

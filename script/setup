@@ -35,11 +35,13 @@ link_if_needed() {
   if [[ "${target}" -ef "${source}" ]]; then
     return
   elif [[ -L "${target}" ]]; then
-    ln -sf "${source}" "${target}"
+    # -n is what makes this safe for directories: without it, ln dereferences an
+    # existing dir symlink and drops the new link *inside* the target.
+    ln -sfn "${source}" "${target}"
   else
     # Preserve any real file the user may have by backing it up once.
     [[ -e "${target}" ]] && mv -v "${target}" "${target}.backup.$(date +%s)"
-    ln -svf "${source}" "${target}"
+    ln -svfn "${source}" "${target}"
   fi
 }
 
@@ -51,7 +53,7 @@ for DOTFILE in *; do
 
   # Dirs and files we never auto-link at the root level.
   case "${DOTFILE}" in
-    bin/|script/|claude/|codex/|ghostty/|kimi-code/|zsh/|.git/|*.md|*.txt|LICENSE|Brewfile|vscode-extensions.txt)
+    bin/|script/|claude/|codex/|ghostty/|kimi-code/|omarchy/|zsh/|.git/|*.md|*.txt|LICENSE|Archfile|Brewfile|vscode-extensions.txt)
       continue
       ;;
   esac
@@ -60,6 +62,10 @@ for DOTFILE in *; do
   case "${DOTFILE}" in
     gitconfig.local.macos)
       [[ -z "${MACOS}" ]] && continue
+      HOMEFILE="${HOME}/.gitconfig.local"
+      ;;
+    gitconfig.local.linux)
+      [[ -z "${LINUX}" ]] && continue
       HOMEFILE="${HOME}/.gitconfig.local"
       ;;
     vscode-settings.json)
@@ -113,10 +119,62 @@ link_if_needed "${HOME}/.kimi-code/config.toml"   "${DOTFILESDIR}/kimi-code/conf
 link_if_needed "${HOME}/.kimi-code/tui.toml"      "${DOTFILESDIR}/kimi-code/tui.toml"
 link_if_needed "${HOME}/.kimi-code/statusline.sh" "${DOTFILESDIR}/kimi-code/statusline.sh"
 
-# Ghostty. Only the XDG path is linked: Ghostty 1.3.1 also reads
+# Ghostty, macOS only. Only the XDG path is linked: Ghostty 1.3.1 also reads
 # ~/Library/Application Support/com.mitchellh.ghostty/config.ghostty, and two
 # live configs is one config too many.
-link_if_needed "${HOME}/.config/ghostty/config" "${DOTFILESDIR}/ghostty/config"
+#
+# Not linked on Linux on purpose. Omarchy owns ~/.config/ghostty/config: it
+# pulls colours from the active theme via an include of
+# ~/.local/state/omarchy/current/theme/ghostty.conf and carries the CSI-u
+# keybinds TUIs rely on for Shift+Enter. Linking over it would break both.
+# The Linux palette lives in omarchy/themes/ instead.
+if [[ -n "${MACOS}" ]]; then
+  link_if_needed "${HOME}/.config/ghostty/config" "${DOTFILESDIR}/ghostty/config.macos"
+fi
+
+# Claude status line. Shared by the host settings.json and the sbx kit, which
+# symlinks to this same file — one implementation, and the only one whose
+# epoch formatting works on GNU date as well as BSD.
+link_if_needed "${HOME}/.claude/statusline.sh" "${DOTFILESDIR}/claude/statusline.sh"
+
+# Omarchy desktop config (Linux only).
+#
+# These are exactly the five files ~/.config/hypr/hyprland.lua requires, which
+# Omarchy's own comment calls the user-override surface: "loaded after Omarchy's
+# defaults so package updates can improve the defaults without rewriting your
+# ~/.config/hypr files."
+#
+# hyprland.lua itself is deliberately NOT linked. It is the entrypoint, it holds
+# no personal config, and three update migrations rewrite it with `mv` — which
+# replaces a symlink with a real file and silently orphans the repo copy.
+#
+# monitors.lua IS linked. No migration touches it, and the QEMU/virgl block the
+# installer seeded there is gated on the kernel cmdline, so it self-disables on
+# any machine that is not this VM.
+if [[ -n "${LINUX}" ]] && [[ -d "${DOTFILESDIR}/omarchy" ]]; then
+  for HYPRFILE in bindings looknfeel input autostart monitors; do
+    link_if_needed "${HOME}/.config/hypr/${HYPRFILE}.lua" \
+                   "${DOTFILESDIR}/omarchy/hypr/${HYPRFILE}.lua"
+  done
+
+  # The Omarchy shell config is intentionally NOT symlinked, for the same class
+  # of reason as claude/settings.json: the shell persists it with atomic writes
+  # (temp file + rename) on every bar/widget/idle change made through the UI,
+  # and five migrations rewrite it the same way. Either destroys the link, and
+  # the next ./script/setup then quietly reverts the change. Copy by hand:
+  #   cp omarchy/shell.json ~/.config/omarchy/shell.json && omarchy restart shell
+  #   cp ~/.config/omarchy/shell.json omarchy/shell.json
+
+  # Custom themes sit alongside Omarchy's stock ones and the git-cloned user
+  # themes. A symlinked theme dir is treated as user-written and unrestricted,
+  # so it may ship the terminal colour files this one needs.
+  #   omarchy theme set dracula-pro-van-helsing
+  for THEMEDIR in "${DOTFILESDIR}"/omarchy/themes/*/; do
+    [[ -d "${THEMEDIR}" ]] || continue
+    THEMENAME="$(basename "${THEMEDIR}")"
+    link_if_needed "${HOME}/.config/omarchy/themes/${THEMENAME}" "${THEMEDIR%/}"
+  done
+fi
 
 # Codex config is intentionally NOT symlinked: the repo copy is a template
 # (missing per-machine notify path + [projects.*] trust blocks). Copy manually
