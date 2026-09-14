@@ -47,16 +47,30 @@ draws with `color0`. Keep those four in step with
 `$OMARCHY_PATH/default/themed/*.tpl` when Omarchy adds keys; the drift check in
 `AGENTS.md` covers it.
 
-The background is a generated gradient, on-palette and a few KB, rather than a
+The background is a generated gradient, on-palette and ~50 KB, rather than a
 photo of unknown provenance in a public repo:
 
 ```bash
-magick -size 3840x2160 gradient:'#0B0D0F-#22212C' \
+magick -size 2160x3840 gradient:'#2B2145-#0B0D0F' -rotate 90 \
+  -resize '3840x2160!' \
   omarchy/themes/dracula-pro-van-helsing/backgrounds/van-helsing.png
 ```
 
+It was `gradient:'#0B0D0F-#22212C'` first — two near-blacks, which renders as a
+blank desktop and reads as a broken install. If you change it, look at the
+result before committing: a wallpaper is the one file in this repo you cannot
+verify by reading it.
+
 Photographic wallpapers belong in `~/.config/omarchy/backgrounds/dracula-pro-van-helsing/`,
-which `omarchy theme bg` also searches and which stays out of git.
+which `omarchy theme bg` searches *ahead* of the theme's own folder and which
+stays out of git. Omarchy's bundled ones are good source material:
+
+```bash
+mkdir -p ~/.config/omarchy/backgrounds/dracula-pro-van-helsing
+cp /usr/share/omarchy/themes/tokyo-night/backgrounds/1-quattro.jpg \
+   ~/.config/omarchy/backgrounds/dracula-pro-van-helsing/
+omarchy theme bg set ~/.config/omarchy/backgrounds/dracula-pro-van-helsing/1-quattro.jpg
+```
 
 ## Fonts
 
