@@ -69,10 +69,27 @@ if [[ "$1" == "--chsh" ]]; then
   fi
 
   chsh -s "$(command -v zsh)"
-  say "Login shell is now zsh. Log out and back in."
-else
-  say "==> Skipping chsh. Re-run with --chsh once you have checked:"
-  say "      zsh -lic 'command -v claude'   # should be ~/.dotfiles/bin/claude"
+  say "Login shell is now zsh. LOG OUT AND BACK IN for it to take effect."
 fi
 
-say "Done."
+# Report the end state last, and loudly. Without --chsh the login shell is
+# untouched by design, and a one-line "skipping" notice printed before this
+# scrolls away behind pacman's output — which reads as "the setup didn't work"
+# after the next reboot.
+say ""
+say "==> Done. Login shell is currently: $(getent passwd "$USER" | cut -d: -f7)"
+if [[ "$(getent passwd "$USER" | cut -d: -f7)" != *zsh ]]; then
+  warn ""
+  warn "  Still bash. This script does not change your login shell unless you"
+  warn "  ask it to, so that a broken zsh config cannot lock you out."
+  warn ""
+  warn "  Check it works, then switch:"
+  warn "      zsh -lic 'command -v claude'   # expect ~/.dotfiles/bin/claude"
+  warn "      ./script/omarchy-bootstrap --chsh"
+  warn ""
+elif [[ "${SHELL}" != *zsh ]]; then
+  warn ""
+  warn "  Login shell is zsh but this session still has SHELL=${SHELL}."
+  warn "  Log out and back in."
+  warn ""
+fi
