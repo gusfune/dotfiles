@@ -1,0 +1,1 @@
+sbx-kit/files/home/.claude/statusline.sh

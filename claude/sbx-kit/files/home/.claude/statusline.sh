@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
-# Claude Code status line for Docker Sandboxes. Same output as the host
-# statusLine one-liner in ~/.claude/settings.json, unrolled into a file so a
-# kit can ship it. One difference: epoch formatting works on GNU, uutils and
-# BSD date. Receives the session JSON on stdin.
+# Claude Code status line. THE implementation — the host settings.json and the
+# sbx kit both point here, and claude/statusline.sh is a symlink to this file.
+#
+# It lives inside the kit rather than at claude/statusline.sh because `sbx kit
+# validate` rejects a symlink that escapes the kit directory, so the real bytes
+# have to sit in here. Same inversion as claude-plus.md, same reason.
+#
+# It used to be a one-liner in settings.json that formatted epochs with BSD
+# `date -r N`. On GNU coreutils that means "reference file", so it errored into
+# 2>/dev/null and the rate-limit reset times silently vanished on Linux.
+# fmt_epoch below handles GNU, uutils and BSD. Receives session JSON on stdin.
 #
 #   line 1:  🕐 [timestamp] 📂 dir 🌿 (branch) 🤖 [model] {effort} 📊 [ctx: NK]
 #   line 2:  📥 in: NK 📤 out: NK ⏳ [5h: N% reset] 📅 [7d: N% reset]

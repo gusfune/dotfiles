@@ -130,48 +130,48 @@ pattern = "mcp__Linear__*"
 # cwd); observer events are already fire-and-forget, so no async flag needed.
 [[hooks]]
 event = "SessionStart"
-command = "~/.claude/hooks/peon-ping/peon.sh"
+command = "[ -x ~/.claude/hooks/peon-ping/peon.sh ] && ~/.claude/hooks/peon-ping/peon.sh || true"
 timeout = 10
 
 [[hooks]]
 event = "SessionEnd"
-command = "~/.claude/hooks/peon-ping/peon.sh"
+command = "[ -x ~/.claude/hooks/peon-ping/peon.sh ] && ~/.claude/hooks/peon-ping/peon.sh || true"
 timeout = 10
 
 [[hooks]]
 event = "UserPromptSubmit"
-command = "~/.claude/hooks/peon-ping/peon.sh"
+command = "[ -x ~/.claude/hooks/peon-ping/peon.sh ] && ~/.claude/hooks/peon-ping/peon.sh || true"
 timeout = 10
 
 [[hooks]]
 event = "Stop"
-command = "~/.claude/hooks/peon-ping/peon.sh"
+command = "[ -x ~/.claude/hooks/peon-ping/peon.sh ] && ~/.claude/hooks/peon-ping/peon.sh || true"
 timeout = 10
 
 [[hooks]]
 event = "Notification"
-command = "~/.claude/hooks/peon-ping/peon.sh"
+command = "[ -x ~/.claude/hooks/peon-ping/peon.sh ] && ~/.claude/hooks/peon-ping/peon.sh || true"
 timeout = 10
 
 [[hooks]]
 event = "PreCompact"
-command = "~/.claude/hooks/peon-ping/peon.sh"
+command = "[ -x ~/.claude/hooks/peon-ping/peon.sh ] && ~/.claude/hooks/peon-ping/peon.sh || true"
 timeout = 10
 
 [[hooks]]
 event = "SubagentStart"
-command = "~/.claude/hooks/peon-ping/peon.sh"
+command = "[ -x ~/.claude/hooks/peon-ping/peon.sh ] && ~/.claude/hooks/peon-ping/peon.sh || true"
 timeout = 10
 
 [[hooks]]
 event = "SubagentStop"
-command = "~/.claude/hooks/peon-ping/peon.sh"
+command = "[ -x ~/.claude/hooks/peon-ping/peon.sh ] && ~/.claude/hooks/peon-ping/peon.sh || true"
 timeout = 10
 
 [[hooks]]
 event = "PostToolUseFailure"
 matcher = "Bash"
-command = "~/.claude/hooks/peon-ping/peon.sh"
+command = "[ -x ~/.claude/hooks/peon-ping/peon.sh ] && ~/.claude/hooks/peon-ping/peon.sh || true"
 timeout = 10
 
 [providers."managed:kimi-code"]
