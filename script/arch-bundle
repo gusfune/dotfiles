@@ -31,14 +31,6 @@ section() {
 
 case "${1:-check}" in
   install)
-    # pacman needs root. Say so readably instead of letting the caller see
-    # sudo's "a terminal is required" followed by xargs exiting 123.
-    if ! sudo -n true 2>/dev/null && [ ! -t 0 ]; then
-      echo "arch-bundle install needs sudo and there is no terminal here to" >&2
-      echo "read the password from. Run it directly in a terminal." >&2
-      exit 1
-    fi
-
     # Install only what is MISSING. --needed is not enough on its own: it skips
     # a package at the same version but still *upgrades* one that is out of
     # date, and upgrading a single package without a full -Syu is a partial
@@ -51,12 +43,29 @@ case "${1:-check}" in
     trap 'rm -f "${installed}"' EXIT
     pacman -Qq | LC_ALL=C sort -u > "${installed}"
 
-    missing_repo=$(section repo | LC_ALL=C comm -23 - "${installed}")
-    missing_aur=$(section aur  | LC_ALL=C comm -23 - "${installed}")
+    # Arrays, not `xargs`. Both of the obvious pipelines break the confirmation
+    # prompt, for two different reasons:
+    #   pacman -S --needed -   pacman reads its target list from stdin and then
+    #                          has nothing left to read the prompt from
+    #   ... | xargs pacman     xargs runs its child with stdin on /dev/null, so
+    #                          pacman's "Proceed with installation? [Y/n]" can
+    #                          never be answered and the install hangs
+    # Passing the list as arguments leaves stdin alone, which is the whole point.
+    mapfile -t repo_pkgs < <(section repo | LC_ALL=C comm -23 - "${installed}")
+    mapfile -t aur_pkgs  < <(section aur  | LC_ALL=C comm -23 - "${installed}")
 
-    if [[ -z "${missing_repo}" && -z "${missing_aur}" ]]; then
+    if (( ${#repo_pkgs[@]} == 0 && ${#aur_pkgs[@]} == 0 )); then
       echo "Nothing missing — every Archfile package is already installed."
       exit 0
+    fi
+
+    # Only now does this need root — so a fully provisioned box re-runs clean
+    # without a password, which is what makes omarchy-bootstrap re-runnable.
+    # Say so readably rather than letting the caller meet sudo's raw error.
+    if ! sudo -n true 2>/dev/null && [[ ! -t 0 ]]; then
+      echo "arch-bundle install needs sudo and there is no terminal here to" >&2
+      echo "read the password from. Run it directly in a terminal." >&2
+      exit 1
     fi
 
     # Even installing a genuinely new package pulls its dependencies at current
@@ -68,16 +77,15 @@ case "${1:-check}" in
       echo "system and a single-package upgrade here would be a partial one." >&2
     fi
 
-    if [[ -n "${missing_repo}" ]]; then
-      echo "Installing: $(echo ${missing_repo} | tr '\n' ' ')"
-      # xargs rather than a pipe: `pacman -S -` reads its target list from stdin
-      # and then has no stdin left to read the confirmation prompt from.
-      echo "${missing_repo}" | xargs -r sudo pacman -S --needed
+    if (( ${#repo_pkgs[@]} )); then
+      echo "Installing: ${repo_pkgs[*]}"
+      sudo pacman -S --needed "${repo_pkgs[@]}"
     fi
 
-    if [[ -n "${missing_aur}" ]]; then
+    if (( ${#aur_pkgs[@]} )); then
       if command -v yay >/dev/null; then
-        echo "${missing_aur}" | xargs -r yay -S --needed
+        echo "Installing from the AUR: ${aur_pkgs[*]}"
+        yay -S --needed "${aur_pkgs[@]}"
       else
         echo "yay not found — skipping the AUR section." >&2
       fi

@@ -461,9 +461,13 @@ Same traps as the Brewfile drift check, plus two of its own:
   90 explicit ones.
 - `LC_ALL=C` on every `sort` *and* `comm` — `comm` needs both inputs in the
   collation the `sort` produced.
-- `pacman -S --needed -` looks like the obvious installer. It is not: pacman
-  reads its target list from stdin and then has nothing left to read the
-  confirmation prompt from. `arch-bundle` uses `xargs`.
+- Both obvious ways to feed pacman a package list break its confirmation
+  prompt, for different reasons. `pacman -S --needed -` reads its targets from
+  stdin and then has nothing left to read `Proceed with installation? [Y/n]`
+  from. Piping into `xargs` is worse and looks fine: GNU `xargs` runs its child
+  with **stdin on `/dev/null`**, so the prompt appears, accepts nothing, and
+  hangs forever. Verified with `readlink /proc/self/fd/0` in the child. Pass the
+  list as arguments from a bash array instead — that leaves stdin alone.
 - **`--needed` does not mean "only if missing".** It skips a package that is
   already at the repo version, but it still *upgrades* one that is out of date.
   Feeding it the whole Archfile on a system with pending updates is therefore a
