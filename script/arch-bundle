@@ -39,13 +39,48 @@ case "${1:-check}" in
       exit 1
     fi
 
-    # xargs rather than a pipe: `pacman -S -` reads its target list from stdin
-    # and then has no stdin left to read the confirmation prompt from.
-    section repo | xargs -r sudo pacman -S --needed
-    if command -v yay >/dev/null; then
-      section aur | xargs -r yay -S --needed
-    else
-      echo "yay not found — skipping the AUR section." >&2
+    # Install only what is MISSING. --needed is not enough on its own: it skips
+    # a package at the same version but still *upgrades* one that is out of
+    # date, and upgrading a single package without a full -Syu is a partial
+    # upgrade. That is how asking for a stock `systemd` produces
+    #   installing systemd (261.3-1) breaks dependency 'systemd=261.2'
+    #   required by systemd-sysvcompat
+    # This file lists the whole system so `check` can detect drift, but Omarchy
+    # owns the base system — `omarchy update` upgrades it, not this script.
+    installed=$(mktemp)
+    trap 'rm -f "${installed}"' EXIT
+    pacman -Qq | LC_ALL=C sort -u > "${installed}"
+
+    missing_repo=$(section repo | LC_ALL=C comm -23 - "${installed}")
+    missing_aur=$(section aur  | LC_ALL=C comm -23 - "${installed}")
+
+    if [[ -z "${missing_repo}" && -z "${missing_aur}" ]]; then
+      echo "Nothing missing — every Archfile package is already installed."
+      exit 0
+    fi
+
+    # Even installing a genuinely new package pulls its dependencies at current
+    # repo versions, which on a stale system is still a partial upgrade.
+    # checkupdates (pacman-contrib) asks the sync DB without touching anything.
+    if command -v checkupdates >/dev/null && [[ -n "$(checkupdates 2>/dev/null)" ]]; then
+      echo "note: this system has pending updates. If pacman complains about" >&2
+      echo "dependencies, run 'omarchy update' first — Omarchy owns the base" >&2
+      echo "system and a single-package upgrade here would be a partial one." >&2
+    fi
+
+    if [[ -n "${missing_repo}" ]]; then
+      echo "Installing: $(echo ${missing_repo} | tr '\n' ' ')"
+      # xargs rather than a pipe: `pacman -S -` reads its target list from stdin
+      # and then has no stdin left to read the confirmation prompt from.
+      echo "${missing_repo}" | xargs -r sudo pacman -S --needed
+    fi
+
+    if [[ -n "${missing_aur}" ]]; then
+      if command -v yay >/dev/null; then
+        echo "${missing_aur}" | xargs -r yay -S --needed
+      else
+        echo "yay not found — skipping the AUR section." >&2
+      fi
     fi
     ;;
 

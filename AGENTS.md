@@ -464,6 +464,24 @@ Same traps as the Brewfile drift check, plus two of its own:
 - `pacman -S --needed -` looks like the obvious installer. It is not: pacman
   reads its target list from stdin and then has nothing left to read the
   confirmation prompt from. `arch-bundle` uses `xargs`.
+- **`--needed` does not mean "only if missing".** It skips a package that is
+  already at the repo version, but it still *upgrades* one that is out of date.
+  Feeding it the whole Archfile on a system with pending updates is therefore a
+  partial upgrade, and it fails exactly like this:
+
+  ```
+  error: failed to prepare transaction (could not satisfy dependencies)
+  :: installing systemd (261.3-1) breaks dependency 'systemd=261.2'
+     required by systemd-sysvcompat
+  ```
+
+  `arch-bundle install` computes the missing set against `pacman -Qq` and
+  installs only that. Omarchy owns the base system — `omarchy update` upgrades
+  it, never this script. Run `omarchy update` first if `checkupdates` is
+  non-empty and pacman still complains about dependencies.
+- Packages Omarchy pins appear in `IgnorePkg` (`hyprland`, `linux-aarch64`,
+  `linux-aarch64-headers`) and prompt "Install anyway?" if you name them
+  directly. Installing only the missing set sidesteps that too.
 - Anything installed by a vendor script rather than pacman (Zed lives in
   `~/.local/zed.app`; Homebrew; the mise-managed `bun`/`claude`/`codex`/`gh`/
   `node`) never shows in a dump. Listing it means permanent phantom drift, so
