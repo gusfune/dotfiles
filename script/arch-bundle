@@ -12,7 +12,12 @@ set -eo pipefail
 
 DOTFILESDIR="$(cd "${0%/*}/.." && pwd -P)"
 ARCHFILE="${ARCHFILE:-${DOTFILESDIR}/Archfile}"
-[[ -r "${ARCHFILE}" ]] || { echo "No Archfile at ${ARCHFILE}" >&2; exit 1; }
+
+# `dump` writes the file, so it is the one subcommand that must work without it.
+if [[ "${1:-check}" != "dump" && ! -r "${ARCHFILE}" ]]; then
+  echo "No Archfile at ${ARCHFILE} — run 'arch-bundle dump' to create one." >&2
+  exit 1
+fi
 
 # Strip fences, comments and blank lines out of one section.
 section() {
@@ -26,6 +31,14 @@ section() {
 
 case "${1:-check}" in
   install)
+    # pacman needs root. Say so readably instead of letting the caller see
+    # sudo's "a terminal is required" followed by xargs exiting 123.
+    if ! sudo -n true 2>/dev/null && [ ! -t 0 ]; then
+      echo "arch-bundle install needs sudo and there is no terminal here to" >&2
+      echo "read the password from. Run it directly in a terminal." >&2
+      exit 1
+    fi
+
     # xargs rather than a pipe: `pacman -S -` reads its target list from stdin
     # and then has no stdin left to read the confirmation prompt from.
     section repo | xargs -r sudo pacman -S --needed
