@@ -1,0 +1,37 @@
+#!/bin/sh
+# Claude Code always runs with the Claude Plus prompt as its *whole* system
+# prompt. There is no settings.json key and no env var for this: --system-prompt-file
+# is the only full replacement, and it is per-invocation. So we shadow the real
+# binary on PATH (see path_prepend in zprofile.sh) and add the flag every time.
+#
+# There is no opt-out switch. The A/B against the stock prompt is done and
+# Claude Plus won; if you ever want the stock prompt back, call the real binary
+# by its absolute path.
+#
+# The flag is harmless on subcommands (mcp, plugin, update, --version all tested),
+# so no argument sniffing is needed. Ship of Theseus, but only the figurehead
+# was replaced.
+
+PROMPT="$HOME/.dotfiles/claude/claude-plus.md"
+
+# Never resolve "claude" through PATH here — that is this script, and it would
+# fork-bomb the machine rather than answer your question.
+REAL=
+for candidate in "$HOME/.local/bin/claude" /opt/homebrew/bin/claude /usr/local/bin/claude; do
+  if [ -x "$candidate" ]; then
+    REAL="$candidate"
+    break
+  fi
+done
+
+if [ -z "$REAL" ]; then
+  echo "claude: real binary not found behind the Claude Plus wrapper" >&2
+  exit 127
+fi
+
+# A missing or unreadable prompt file must not take Claude down with it.
+if [ ! -r "$PROMPT" ]; then
+  exec "$REAL" "$@"
+fi
+
+exec "$REAL" --system-prompt-file "$PROMPT" "$@"

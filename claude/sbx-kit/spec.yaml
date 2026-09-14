@@ -6,7 +6,7 @@ name: gus-claude-prefs
 requires:
   agent: claude
 displayName: Personal Claude Code prefs
-description: Ships ~/.claude/statusline.sh and merges ~/.claude/sbx-prefs.json into ~/.claude/settings.json so a sandbox Claude renders the same status line and model prefs as the host. jq merge, every other key preserved.
+description: Ships ~/.claude/statusline.sh and ~/.claude/claude-plus.md, and merges ~/.claude/sbx-prefs.json into ~/.claude/settings.json, so a sandbox Claude renders the same status line and model prefs as the host. jq merge, every other key preserved. The Claude Plus prompt is only applied if the launcher passes --system-prompt-file; a mixin cannot set the entrypoint.
 agentInstructions:
   content: |
     ## Personal prefs
@@ -14,6 +14,9 @@ agentInstructions:
     This sandbox merges the operator's Claude Code prefs (status line, model,
     effort) from ~/.claude/sbx-prefs.json into ~/.claude/settings.json at
     image build. Do not edit either file.
+
+    ~/.claude/claude-plus.md is the operator's system prompt. The launcher
+    passes it with --system-prompt-file. Do not edit it.
 setup:
   install:
     - command: |
@@ -28,7 +31,8 @@ setup:
         jq -s '.[0] * .[1]' "$f" "$d/sbx-prefs.json" > "$tmp"
         mv "$tmp" "$f"
         # Shipped files arrive 0644; an unexecutable status line renders nothing.
+        # claude-plus.md stays 0644 on purpose: it is read, never run.
         chmod +x "$d/statusline.sh"
         chown -R agent:agent "$d"
       user: "0"
-      description: Merge sbx-prefs.json into ~/.claude/settings.json and make statusline.sh executable
+      description: Merge sbx-prefs.json into ~/.claude/settings.json, make statusline.sh executable, and hand the whole dir (including claude-plus.md) to the agent user

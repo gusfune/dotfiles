@@ -62,11 +62,17 @@ alias deploy='bun run $HOME/Developer/staging/index.ts deploy'
 # Launch a repo sandbox with the repo kit plus my Claude prefs kit
 # (claude/sbx-kit). The repo launcher drops its own --kit when one is passed,
 # so both are named here. Agent name stays the first positional: sbxme codex.
+#
+# Everything after -- is forwarded to the agent. A mixin cannot set the
+# sandbox entrypoint, so this is the only way to give a sandbox Claude the
+# same full-replacement system prompt the host wrapper (bin/claude) applies.
+# It is per-invocation, which is fine: this function is the only launcher.
 sbxme() {
   if [ -x .docker/sandbox.sh ]; then
     .docker/sandbox.sh "$@" --kit ./.docker/sandbox-kit/ --kit "$HOME/.dotfiles/claude/sbx-kit/"
   else
-    sbx run claude "$@" --kit "$HOME/.dotfiles/claude/sbx-kit/"
+    sbx run claude "$@" --kit "$HOME/.dotfiles/claude/sbx-kit/" \
+      -- --system-prompt-file /home/agent/.claude/claude-plus.md
   fi
 }
 

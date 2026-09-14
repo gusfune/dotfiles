@@ -11,12 +11,12 @@ fi
 # rbenv.
 command -v rbenv >/dev/null && eval "$(rbenv init - --no-rehash zsh)"
 
-# PATH helpers (prepend/append only if dir exists; dedupe).
-path_prepend() { [ -d "$1" ] || return; PATH=":${PATH//:$1:/:}"; PATH="$1:${PATH#:}"; }
-path_append()  { [ -d "$1" ] || return; PATH=":${PATH//:$1:/:}"; PATH="${PATH#:}:$1"; }
-
+# path_prepend / path_append are defined in .zshenv, which always runs first.
 path_prepend "$HOME/.bun/bin"
 path_prepend "$HOME/.local/bin"
+# Re-hoist after .local/bin. .zshenv already put this first, but the prepends
+# above would bury it and the real claude binary lives in ~/.local/bin.
+path_prepend "$HOME/.dotfiles/bin"
 export PATH
 
 # Atuin (shell history).
