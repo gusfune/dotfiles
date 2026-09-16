@@ -1,6 +1,6 @@
 {
   "statusLine": { "type": "command", "command": "~/.claude/statusline.sh" },
-  "model": "fable",
+  "model": "opus",
   "effortLevel": "xhigh",
   "alwaysThinkingEnabled": true,
   "showThinkingSummaries": true,
