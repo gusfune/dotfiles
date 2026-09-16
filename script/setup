@@ -53,7 +53,7 @@ for DOTFILE in *; do
 
   # Dirs and files we never auto-link at the root level.
   case "${DOTFILE}" in
-    bin/|script/|claude/|codex/|ghostty/|kimi-code/|omarchy/|zsh/|.git/|*.md|*.txt|LICENSE|Archfile|Brewfile|vscode-extensions.txt)
+    bin/|script/|claude/|codex/|ghostty/|kimi-code/|mise/|omarchy/|zsh/|.git/|*.md|*.txt|LICENSE|Archfile|Brewfile|vscode-extensions.txt)
       continue
       ;;
   esac
@@ -181,6 +181,14 @@ fi
 # on a new machine:
 #   cp "${DOTFILESDIR}/codex/config.toml" ~/.codex/config.toml
 # then add your notify + project trusts.
+
+# mise tools are intentionally NOT symlinked either, though the reason is churn
+# rather than safety: mise does write through a symlink and does keep the
+# comment header. But the 13 Omarchy wrappers in ~/.local/bin run `mise use -g`
+# on every launch, so a link would put every ad-hoc tool install in the repo's
+# working tree. script/omarchy-bootstrap seeds it when there is nothing there.
+#   cp "${DOTFILESDIR}/mise/config.toml" ~/.config/mise/config.toml
+#   cp ~/.config/mise/config.toml "${DOTFILESDIR}/mise/config.toml"
 
 echo
 echo "Done. New shell will pick up the new .zprofile / .zshrc."

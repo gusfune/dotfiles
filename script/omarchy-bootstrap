@@ -1,10 +1,10 @@
 #!/bin/bash
 # Bring an Omarchy (Arch Linux + Hyprland) box up to what this repo assumes:
-# the Archfile packages, Oh My Zsh, the custom theme, and zsh as the login
-# shell. script/setup only makes symlinks — this is the imperative half, kept
-# separate so the installer itself never needs sudo. Safe to re-run.
+# the Archfile packages, the mise tools, Oh My Zsh, the custom theme, and zsh as
+# the login shell. script/setup only makes symlinks — this is the imperative
+# half, kept separate so the installer itself never needs sudo. Safe to re-run.
 #
-#   ./script/omarchy-bootstrap           # packages + Oh My Zsh + theme
+#   ./script/omarchy-bootstrap           # packages + mise + Oh My Zsh + theme
 #   ./script/omarchy-bootstrap --chsh    # ...and switch the login shell to zsh
 
 set -eo pipefail
@@ -21,6 +21,23 @@ command -v pacman >/dev/null || die "Not an Arch box — pacman not found."
 
 say "==> Installing Archfile packages"
 "${DOTFILESDIR}/script/arch-bundle" install
+
+# mise tools. The config is copy-by-hand — every Omarchy wrapper in ~/.local/bin
+# runs `mise use -g <tool>` on launch, so the live file gains entries this repo
+# has not seen. Seed it only when there is nothing there to clobber; a re-run on
+# a working box must never roll the tool list back to the committed snapshot.
+if command -v mise >/dev/null; then
+  MISECONF="${HOME}/.config/mise/config.toml"
+  if [[ -f "${MISECONF}" ]]; then
+    say "==> mise config already present — leaving it alone"
+  else
+    say "==> Seeding the mise tool config"
+    install -Dm644 "${DOTFILESDIR}/mise/config.toml" "${MISECONF}"
+  fi
+
+  say "==> Installing mise tools"
+  mise install || warn "Some mise tools failed to install. Re-run: mise install"
+fi
 
 # Oh My Zsh. All three env vars are load-bearing:
 #   KEEP_ZSHRC=yes  or the installer moves our symlinked ~/.zshrc aside and

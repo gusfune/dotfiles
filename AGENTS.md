@@ -45,12 +45,13 @@ into `$HOME` by `script/setup`. Modeled on
 | `omarchy/themes/*/`         | `~/.config/omarchy/themes/<name>` (dir symlink, Linux only)                                                                |
 | `Archfile`                  | not symlinked (run `./script/arch-bundle install`)                                                                        |
 | `script/arch-bundle`        | not symlinked (`brew bundle` for pacman + AUR)                                                                            |
-| `script/omarchy-bootstrap`  | not symlinked (packages + Oh My Zsh + `chsh`)                                                                             |
+| `script/omarchy-bootstrap`  | not symlinked (packages + mise + Oh My Zsh + `chsh`)                                                                             |
 | `bin/claude`                | **NOT** symlinked — reached as `~/.dotfiles/bin` on `PATH` (see `zshenv.sh` + `zprofile.sh`); shadows the real Claude Code launcher |
 | `claude/claude-plus.md`     | **NOT** symlinked — a repo-internal symlink into `claude/sbx-kit/files/home/.claude/`; read by absolute path            |
 | `claude/settings.json`      | **NOT** symlinked — copy manually (both ways)                                                                             |
 | `claude/statusline.sh`      | `~/.claude/statusline.sh`; a repo-internal symlink into `claude/sbx-kit/files/home/.claude/`                              |
 | `claude/sbx-kit/`           | not symlinked — an sbx mixin kit, passed to `sbx run --kit` (see [Sandbox (sbx) Claude prefs](#sandbox-sbx-claude-prefs)) |
+| `mise/config.toml`          | **NOT** symlinked — copy manually (both ways)                                                                             |
 | `kimi-code/config.toml`     | `~/.kimi-code/config.toml`                                                                                                |
 | `kimi-code/tui.toml`        | `~/.kimi-code/tui.toml`                                                                                                   |
 | `kimi-code/statusline.sh`   | `~/.kimi-code/statusline.sh` (referenced by `tui.toml` `[status_line]`)                                                   |
@@ -182,6 +183,44 @@ Caveats worth knowing:
   already does the compression the plugin was there for. Two cavemen, one
   cave. Plugin state also lives in the live `~/.claude/settings.json`, which
   is copied by hand, so flip it in both.
+
+### Adding new mise config
+
+`mise/config.toml` is the global tool list. It is **not** symlinked, and the
+reason is churn, not danger. Both halves of the usual worry were tested against
+mise 2026.8.11 with `MISE_GLOBAL_CONFIG_FILE` pointed at a throwaway copy: mise
+writes *through* a symlink (the link survives, the target takes the write) and
+it preserves the comment header when it rewrites the file.
+
+What it cannot survive is the noise. Each of the 13 Omarchy wrappers in
+`~/.local/bin` runs `mise use -g <tool>` on *every* launch, and
+`omarchy-install-dev-env` adds more, so a linked file would report every ad-hoc
+tool install as an uncommitted change in this repo. Copy by hand instead:
+
+```bash
+cp ~/Developer/dotfiles/mise/config.toml ~/.config/mise/config.toml  # repo -> home
+cp ~/.config/mise/config.toml ~/Developer/dotfiles/mise/config.toml  # home -> repo
+mise install                                                         # apply
+diff ~/.config/mise/config.toml ~/Developer/dotfiles/mise/config.toml  # drift check
+```
+
+`script/omarchy-bootstrap` seeds the file on a fresh box and then runs `mise
+install`. It seeds only when the path is empty, so a re-run never rolls a
+working machine back to the committed snapshot.
+
+Three things to know before you edit it:
+
+- `mise settings` is empty on purpose, so there is no `settings.toml` to carry.
+  `omarchy-install-dev-env` would create one (`mise settings add ruby.compile
+  false`); if you ever run it, decide whether that file joins the repo too.
+- `claude = "latest"` is load-bearing. `bin/claude` resolves the real binary
+  through `~/.local/share/mise/installs/claude/latest/` before it tries
+  anything else.
+- On macOS `.zshrc` falls back to nvm when mise is absent. Copying this file to
+  a Mac that has mise gives you two Node managers. Pick one first.
+
+The mise binary itself is pacman's (`try-omarchy-mise`, which `Conflicts With:
+mise`), so **never run `mise self-update`** — `omarchy update` owns that.
 
 ### Adding new Kimi Code config
 

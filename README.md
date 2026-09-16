@@ -63,6 +63,7 @@ over SSH is not recoverable from a login prompt.
 | `ghostty/config.macos`                            | Ghostty config, macOS only — Dracula Pro (Van Helsing) palette, font, cursor              |
 | `zsh/omarchy.zsh`                                 | Omarchy's bash-only shell layer, re-implemented for zsh                                   |
 | `omarchy/`                                        | Hyprland overrides, the Omarchy shell config, and the Dracula Pro theme ([README](./omarchy/README.md)) |
+| `mise/config.toml`                                | Global mise tool list — copy-by-hand template (not symlinked)                             |
 | `Archfile`                                        | pacman + AUR manifest — the Linux counterpart of `Brewfile`                               |
 | `script/arch-bundle`                              | `brew bundle` for pacman + AUR (`install` / `dump` / `check`)                              |
 | `script/omarchy-bootstrap`                        | Packages, Oh My Zsh, theme, `chsh` — the parts `setup` won't do                            |
@@ -104,6 +105,25 @@ trust_level = "trusted"
 
 TOML arrays are not shell-expanded, so `~` will not expand — the path has to be
 absolute.
+
+## mise tools (manual step)
+
+`mise/config.toml` is **not** symlinked — the Omarchy wrappers in `~/.local/bin`
+rewrite the live file on every launch, so a link would put every ad-hoc tool
+install in this repo's working tree. On a new machine:
+
+```bash
+cp ~/Developer/dotfiles/mise/config.toml ~/.config/mise/config.toml
+mise install
+```
+
+`./script/omarchy-bootstrap` does both for you, and seeds the config only when
+there is nothing there already. To pull a newly added tool back into the repo,
+copy the other way:
+
+```bash
+cp ~/.config/mise/config.toml ~/Developer/dotfiles/mise/config.toml
+```
 
 ## Zshrc split — why
 
