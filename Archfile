@@ -14,6 +14,10 @@
 # codex, gh, node — see ~/.config/mise/config.toml). Listing them would show up
 # as permanent phantom drift in `arch-bundle check`.
 #
+# `try-omarchy-mise` is this guest image's pinned mise. Omarchy migration
+# 1786952219 swaps it for `mise-bin`, so expect that line to read as drift
+# after an `omarchy update` — re-dump rather than reinstalling it.
+#
 # ghostty sits in the AUR section because that is where `dump` files a foreign
 # package, but no repo carries it for aarch64 — Arch builds it for x86_64 only.
 # Here it is a local package built from the upstream prebuilt binary, so
@@ -130,6 +134,7 @@ zram-generator
 zstd
 
 # ----- aur -----
+beekeeper-studio-bin    # SQL client for MySQL, Postgres, SQLite, SQL Server
 brave-origin-bin
 ghostty                 # terminal; local aarch64 build, see the note above
 onorca-bin              # Orca; IDE for parallel coding agents. WARNING: rewrites
