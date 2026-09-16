@@ -142,8 +142,12 @@ time.
 The prepend is in **two** files on purpose. `zshenv.sh` runs for every shell,
 which is what gets the wrapper into VS Code terminals, tmux panes, subshells
 and scripts — none of those are login shells. `zprofile.sh` then prepends
-`~/.local/bin`, which holds the real binary and would win, so it re-prepends
-`~/.dotfiles/bin` straight after. Remove either line and `claude` silently
+`~/.local/bin`, which holds a competing `claude` and would win, so it
+re-prepends `~/.dotfiles/bin` straight after. On macOS that competitor is the
+real binary. On Omarchy it is a four-line Omarchy stub that runs `mise use -g
+claude` and then `mise x` — `bin/claude` skips past it deliberately, so it
+never pays for that config write, and so the stub can never bounce back
+through the wrapper. Remove either line and `claude` silently
 falls back to the stock prompt in some shells. Check all three:
 
 ```bash
@@ -404,10 +408,18 @@ Two alias collisions worth knowing, both load-bearing:
 - omz's `z` plugin and zoxide both define `z`. `zshrc.sh` loads the plugin only
   when zoxide is absent.
 
-`mise activate zsh` re-asserts `PATH` on every prompt, which buries the claude
-wrapper behind mise's own `claude` shim — so `zshrc.sh` re-hoists
-`~/.dotfiles/bin` immediately after activating. Removing that line silently
-turns the Claude Plus prompt off.
+`zshrc.sh` deliberately does **not** run `mise activate zsh`. Activate
+re-asserts `PATH` from a `precmd` hook on every prompt and prepends mise's
+*install* directories, one of which holds a real `claude` — so it would jump in
+front of `~/.dotfiles/bin` on the next `cd` and silently turn the Claude Plus
+prompt off. Re-hoisting once at startup does not survive a per-prompt hook.
+
+The shims `env-bootstrap` *appends* resolve every mise tool without activate,
+and appending is exactly what keeps the wrapper in front. The cost is
+per-directory version switching, which this global-only tool list does not
+need. The one hoist that is load-bearing is `path_prepend "$HOME/.dotfiles/bin"`
+in `zprofile.sh`, straight after `~/.local/bin`. Remove that line and `claude`
+falls back to the stock prompt in login shells.
 
 #### What you lose by moving to zsh
 
@@ -479,10 +491,35 @@ readlink ~/.config/omarchy/themes/dracula-pro-van-helsing
 
 # 4. Did the terminal templates gain a key? This theme ships four colour files
 #    that bypass them, so an upstream addition would silently skip it.
+#
+#    Compare KEYS, never placeholders. The obvious version of this check greps
+#    `{{ key }}` on both sides — but the repo files are already substituted and
+#    hold no placeholders at all, so the right side is always empty and the
+#    check always "fails". It cannot detect what it was written to detect.
+#
+#    kitty separates key from value with a space and the others use `=`, so the
+#    key is the first identifier on the line; the section prefix keeps two
+#    same-named keys in different tables apart.
+themekeys() {
+  awk '/^[[:space:]]*($|#|;)/ { next }
+       /^[[:space:]]*\[/      { section = $0; next }
+       match($0, /[A-Za-z0-9_.-]+/) { print section "|" substr($0, RSTART, RLENGTH) }' \
+    "$1" | LC_ALL=C sort -u
+}
 for t in ghostty.conf alacritty.toml foot.ini kitty.conf; do
-  diff <(grep -oE '\{\{ *[a-z_]+ *\}\}' "$OMARCHY_PATH/default/themed/$t.tpl" | sort -u) \
-       <(grep -oE '\{\{ *[a-z_]+ *\}\}' "omarchy/themes/dracula-pro-van-helsing/$t" | sort -u) \
-    >/dev/null 2>&1 || echo "check $t against \$OMARCHY_PATH/default/themed/$t.tpl"
+  diff <(themekeys "$OMARCHY_PATH/default/themed/$t.tpl") \
+       <(themekeys "omarchy/themes/dracula-pro-van-helsing/$t") >/dev/null \
+    || echo "check $t against \$OMARCHY_PATH/default/themed/$t.tpl"
+done
+
+# 5. A theme edit does not reach the running session on its own.
+#    ~/.local/state/omarchy/current/theme is a rendered SNAPSHOT directory, not
+#    a symlink to the theme. Compare only the files the repo owns — the render
+#    also holds a dozen Omarchy generates from its own templates.
+for f in omarchy/themes/dracula-pro-van-helsing/*; do
+  [ -f "$f" ] || continue
+  diff -q "$f" ~/.local/state/omarchy/current/theme/"${f##*/}" >/dev/null 2>&1 \
+    || echo "stale render: ${f##*/} — omarchy theme set dracula-pro-van-helsing"
 done
 ```
 
@@ -594,6 +631,8 @@ Before committing, scan for:
 | Per-machine auto-mode env | `claude/settings.json`                                     | strip `permissions`-adjacent `autoMode.environment` — it names real repos + worktree paths |
 | Machine IDs               | `gitconfig` (`[coderabbit] machineId`), VSCode `sync.gist` | omit; they regen per machine                                                               |
 | Per-project trust blocks  | `codex/config.toml`                                        | strip `[projects."/Users/gus/..."]`                                                        |
+| Codex hook trust hashes   | `codex/config.toml`                                        | strip `[hooks.state."<abs path>:<event>:0:0"]` — absolute paths + `trusted_hash` values     |
+| Orca agent hooks          | `claude/settings.json`                                      | strip the 12 `~/.orca/agent-hooks/` hook entries — Orca re-injects them on every launch     |
 | Personal email / noreply  | `gitconfig`                                                | noreply email is fine; real email up to you                                                |
 
 Quick scan:
