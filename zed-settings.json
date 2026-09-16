@@ -35,17 +35,26 @@
   "minimap": {
     "show": "auto"
   },
+  // Primary is the cask `font-jetbrains-mono` (macOS). Arch ships the family
+  // as "JetBrainsMono Nerd Font" via ttf-jetbrains-mono-nerd, which is a
+  // different family name, not a style — hence the first two fallbacks.
+  // Everything after them is macOS system stock.
   "buffer_font_fallbacks": [
+    "JetBrainsMono Nerd Font",
+    "Hack Nerd Font",
     "Menlo",
     "Monaco",
     "Courier New",
     "monospace"
   ],
-  "buffer_font_family": "Jetbrains Mono",
+  "buffer_font_family": "JetBrains Mono",
   "file_types": {},
   "base_keymap": "VSCode",
   "ui_font_size": 16,
   "buffer_font_size": 15,
+  "auto_install_extensions": {
+    "dracula": true
+  },
   "theme": {
     "mode": "system",
     "light": "Ayu Light",
