@@ -35,6 +35,7 @@ bc                      # arbitrary-precision calc; the Claude/Kimi status lines
 git-lfs                 # gitconfig sets filter.lfs.required, so LFS repos fail without it
 git-delta               # syntax-highlighting diff pager, the SSH-friendly Kaleidoscope
 meld                    # GUI three-way mergetool, wired up in gitconfig.local.linux
+lazygit                 # TUI for git — same as the mac
 lsof                    # backs the find_port alias in zshrc
 ttf-hack-nerd           # terminal font, first choice in ghostty/config.macos
 wget                    # fetch things curl's flags make awkward
