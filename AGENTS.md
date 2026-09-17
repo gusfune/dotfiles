@@ -51,7 +51,7 @@ into `$HOME` by `script/setup`. Modeled on
 | `claude/settings.json`      | **NOT** symlinked — copy manually (both ways)                                                                             |
 | `claude/statusline.sh`      | `~/.claude/statusline.sh`; a repo-internal symlink into `claude/sbx-kit/files/home/.claude/`                              |
 | `claude/sbx-kit/`           | not symlinked — an sbx mixin kit, passed to `sbx run --kit` (see [Sandbox (sbx) Claude prefs](#sandbox-sbx-claude-prefs)) |
-| `mise/config.toml`          | **NOT** symlinked — copy manually (both ways)                                                                             |
+| `mise/global.toml`          | **NOT** symlinked — copy manually (both ways); one file for both machines via `os` filters                                |
 | `kimi-code/config.toml`     | `~/.kimi-code/config.toml`                                                                                                |
 | `kimi-code/tui.toml`        | `~/.kimi-code/tui.toml`                                                                                                   |
 | `kimi-code/statusline.sh`   | `~/.kimi-code/statusline.sh` (referenced by `tui.toml` `[status_line]`)                                                   |
@@ -101,6 +101,25 @@ cp ~/Developer/dotfiles/claude/settings.json ~/.claude/settings.json  # repo -> 
 cp ~/.claude/settings.json ~/Developer/dotfiles/claude/settings.json  # home -> repo
 # then drop autoMode.environment + anything naming a private repo or /Users/gus path
 ```
+
+**Never copy home → repo wholesale.** Three things in the live file must not
+land here, and a blind `cp` brings all of them:
+
+- **Orca's hooks.** They appear in nearly every event, including events the repo
+  already populates, and each command embeds an absolute
+  `/Users/gus/.orca/agent-hooks/...` path. Orca manages them in the live file.
+  Take the repo's `hooks` block unchanged; carry nothing from live.
+- **The `baerskin-*` plugins and the `baerskin-config` marketplace.**
+  `baerskin/agents-config` is a **private** repo, so naming it here publishes
+  it. Checked with `gh repo view <repo> --json visibility`. Do that check before
+  carrying any new marketplace.
+- **The inline `statusLine`.** The repo's one-liner is
+  `~/.claude/statusline.sh`; the live file may still hold the ~3 KB inline
+  version it replaced. The repo is ahead here, not behind.
+
+`enabledPlugins` and `extraKnownMarketplaces` are sorted by key in the repo
+copy. Claude writes them in insertion order, so sorting is what keeps the next
+diff readable instead of a reshuffle.
 
 `codex/config.toml` is **not** symlinked either (per-machine `notify` +
 `[projects.*]` trust blocks live in real `~/.codex/config.toml`). To update the
@@ -190,7 +209,22 @@ Caveats worth knowing:
 
 ### Adding new mise config
 
-`mise/config.toml` is the global tool list. It is **not** symlinked, and the
+`mise/global.toml` is the global tool list. **The filename matters.** It cannot
+be `mise/config.toml`, because that is one of the paths mise auto-detects as a
+project-local config — and a detected-but-untrusted config is a hard error,
+not a warning. While the file had that name, every mise command *and every
+shim* run from inside this repo failed:
+
+```
+$ cd ~/Developer/dotfiles && node -v
+mise ERROR Config files in ~/Developer/dotfiles/mise/config.toml are not trusted.
+```
+
+`mise trust` clears it per machine, but the trust record is content-hashed, so
+every edit to the tool list would break `node` in this repo again. A filename
+mise does not look for carries no state at all. Do not rename it back.
+
+It is **not** symlinked either, and the
 reason is churn, not danger. Both halves of the usual worry were tested against
 mise 2026.8.11 with `MISE_GLOBAL_CONFIG_FILE` pointed at a throwaway copy: mise
 writes *through* a symlink (the link survives, the target takes the write) and
@@ -202,29 +236,62 @@ What it cannot survive is the noise. Each of the 13 Omarchy wrappers in
 tool install as an uncommitted change in this repo. Copy by hand instead:
 
 ```bash
-cp ~/Developer/dotfiles/mise/config.toml ~/.config/mise/config.toml  # repo -> home
-cp ~/.config/mise/config.toml ~/Developer/dotfiles/mise/config.toml  # home -> repo
+cp ~/Developer/dotfiles/mise/global.toml ~/.config/mise/config.toml  # repo -> home
+cp ~/.config/mise/config.toml ~/Developer/dotfiles/mise/global.toml  # home -> repo
 mise install                                                         # apply
-diff ~/.config/mise/config.toml ~/Developer/dotfiles/mise/config.toml  # drift check
+diff ~/.config/mise/config.toml ~/Developer/dotfiles/mise/global.toml  # drift check
 ```
 
 `script/omarchy-bootstrap` seeds the file on a fresh box and then runs `mise
 install`. It seeds only when the path is empty, so a re-run never rolls a
 working machine back to the committed snapshot.
 
-Three things to know before you edit it:
+One file serves both machines, and the `os` filters decide who gets what:
+
+```toml
+node = "latest"                                    # both
+ruby = { version = "3.4.1", os = ["macos"] }       # replaces rbenv
+bun  = { version = "latest", os = ["linux"] }      # ...and eight more
+```
+
+macOS takes only `node` and `ruby`. That is not timidity — it follows from the
+`PATH` order. The shims are **appended** on Omarchy and **prepended**
+everywhere else, so on macOS an unfiltered entry would put mise in front of
+Homebrew for a tool Homebrew already owns and keeps patched. Verified against
+mise 2026.9.10: `mise ls` on macOS lists `node` and `ruby` and skips the nine
+`os = ["linux"]` tools outright.
+
+Why prepend on macOS at all: `brew shellenv` prepends `/opt/homebrew/bin`,
+which holds a `node` that `gemini-cli` and `kimi-code` depend on and that
+therefore cannot be uninstalled, and `/usr/bin` holds a `ruby` 2.6. An appended
+shim loses to both, which would make mise decorative. The prepend is guarded by
+`[ -z "$OMARCHY_PATH" ]` in **both** `zshenv.sh` and `zprofile.sh` — the second
+one because `brew shellenv` runs in between and would otherwise bury it — and
+`~/.dotfiles/bin` is re-prepended after it so the `claude` wrapper still wins.
+
+Things to know before you edit it:
 
 - `mise settings` is empty on purpose, so there is no `settings.toml` to carry.
   `omarchy-install-dev-env` would create one (`mise settings add ruby.compile
   false`); if you ever run it, decide whether that file joins the repo too.
-- `claude = "latest"` is load-bearing. `bin/claude` resolves the real binary
+- `claude` is load-bearing **on Linux**. `bin/claude` resolves the real binary
   through `~/.local/share/mise/installs/claude/latest/` before it tries
-  anything else.
-- On macOS `.zshrc` falls back to nvm when mise is absent. Copying this file to
-  a Mac that has mise gives you two Node managers. Pick one first.
+  anything else. It is `os = ["linux"]` for the same reason: a mise `claude` on
+  macOS would displace the native installer's build under
+  `~/.local/share/claude/versions/`, and `claude update` would then keep
+  maintaining a binary nothing launches.
+- `ruby` is pinned, not `latest`. mise prefers a precompiled Ruby and falls
+  back to a ruby-build compile, so a `latest` bump can cost half an hour of CPU.
+- **Read the diff before you copy home → repo.** `mise use -g` rewrites the
+  entry it touches, and whether it preserves an `os` filter is unverified. The
+  13 Omarchy wrappers run it on every launch, so check with `mise config get
+  tools.node` on the Omarchy box before trusting the copy.
+- The tool list is global-only, so `.nvmrc` and `.node-version` files in
+  projects are ignored. nvm ignored them too without an explicit `nvm use`.
 
-The mise binary itself is pacman's (`try-omarchy-mise`, which `Conflicts With:
-mise`), so **never run `mise self-update`** — `omarchy update` owns that.
+The mise binary itself is pacman's on Arch (`try-omarchy-mise`, which
+`Conflicts With: mise`), so **never run `mise self-update`** — `omarchy update`
+owns that. On macOS it is Homebrew's, so `brew upgrade` owns it.
 
 ### Adding new Kimi Code config
 
@@ -393,6 +460,11 @@ sourced from `~/.bashrc`). Switching to zsh drops all of it, so:
   only file that runs for *every* zsh — `zsh -c 'omarchy-menu'` is not a login
   shell. It must also run *before* `path_prepend "$HOME/.dotfiles/bin"`, because
   it appends `~/.local/bin` and the claude wrapper has to stay in front.
+  Exporting `OMARCHY_PATH` is also the signal the next block reads: the mise
+  shims prepend in `zshenv.sh` and `zprofile.sh` is guarded by
+  `[ -z "$OMARCHY_PATH" ]`, so this box keeps the appended order it needs and
+  macOS gets the prepend it needs. Re-prepending here would be the bug — it
+  would put the mise-installed `claude` ahead of the wrapper.
 - `zsh/omarchy.zsh` re-implements the interactive parts worth keeping. Its
   header lists what is deliberately not carried and why.
 - `~/.bashrc` is left alone on purpose. Four `omarchy-*` commands rewrite it,
@@ -415,11 +487,15 @@ front of `~/.dotfiles/bin` on the next `cd` and silently turn the Claude Plus
 prompt off. Re-hoisting once at startup does not survive a per-prompt hook.
 
 The shims `env-bootstrap` *appends* resolve every mise tool without activate,
-and appending is exactly what keeps the wrapper in front. The cost is
-per-directory version switching, which this global-only tool list does not
+and on this box appending is exactly what keeps the wrapper in front. The cost
+is per-directory version switching, which this global-only tool list does not
 need. The one hoist that is load-bearing is `path_prepend "$HOME/.dotfiles/bin"`
 in `zprofile.sh`, straight after `~/.local/bin`. Remove that line and `claude`
 falls back to the stock prompt in login shells.
+
+macOS cannot copy the appended order — `brew shellenv` prepends
+`/opt/homebrew/bin` and would win — so it prepends the shims instead and relies
+on that same hoist. See [Adding new mise config](#adding-new-mise-config).
 
 #### What you lose by moving to zsh
 
@@ -582,8 +658,12 @@ entries — the inline comment style is "what the package does", not "why kept"
 
 ### Refreshing VSCode extensions list
 
+`vscode-extensions.txt` is the **only** list of extensions. The Brewfile used to
+carry a second, hand-curated one; it is gone. Refresh and restore:
+
 ```bash
-code --list-extensions > ~/Developer/dotfiles/vscode-extensions.txt
+code --list-extensions > ~/Developer/dotfiles/vscode-extensions.txt   # snapshot
+xargs -L1 code --install-extension < vscode-extensions.txt            # restore
 ```
 
 ### Drift check
@@ -591,9 +671,12 @@ code --list-extensions > ~/Developer/dotfiles/vscode-extensions.txt
 ```bash
 brew bundle dump --file=/tmp/Brewfile.current --force
 
-# Reduce both files to "<type> <name>" pairs, then compare.
+# Reduce both files to "<type> <name>" pairs, then compare. `vscode` is
+# deliberately excluded — the Brewfile no longer carries extensions, so
+# including it would report all 113 installed ones as drift forever. Check
+# those against vscode-extensions.txt instead (next block).
 norm() {
-  awk '/^(tap|brew|cask|mas|vscode|npm) /{
+  awk '/^(tap|brew|cask|mas|npm) /{
     t = $1
     if (match($0, /"[^"]+"/)) print t, substr($0, RSTART, RLENGTH)
   }' "$1" | LC_ALL=C sort -u
@@ -603,7 +686,17 @@ norm /tmp/Brewfile.current         > /tmp/b.live
 
 LC_ALL=C comm -23 /tmp/b.repo /tmp/b.live   # in repo, not installed
 LC_ALL=C comm -13 /tmp/b.repo /tmp/b.live   # installed, not in repo
+
+# VSCode extensions live in their own file, so their check is a plain diff.
+diff <(sort ~/Developer/dotfiles/vscode-extensions.txt) \
+     <(code --list-extensions | sort)
 ```
+
+One entry is expected to show up as "in repo, not installed" forever:
+`font-hack-nerd-font`. `ghostty/config.macos` names Hack Nerd Font Mono as its
+first family, but on this machine the font sits in `~/Library/Fonts` as loose
+TTFs rather than as the cask. The line stays because a fresh machine restoring
+from the Brewfile needs the font; the drift hit is the cost.
 
 Normalise **both** sides or the result is noise. Two traps, both hit for real:
 
@@ -616,9 +709,12 @@ Normalise **both** sides or the result is noise. Two traps, both hit for real:
   directions. Use `awk`. `LC_ALL=C` matters too: `comm` needs both inputs in
   the same collation as the `sort` that produced them.
 
-The `mas` and `vscode` lines only appear if `mas` and `code` are on `PATH` when
-the dump runs; a missing CLI silently drops that whole section from the dump and
-every entry of that type then reads as "uninstalled".
+The `mas` lines only appear if `mas` is on `PATH` when the dump runs; a missing
+CLI silently drops that whole section from the dump and every entry of that type
+then reads as "uninstalled". `vscode` had the same failure mode, which is half
+the reason the Brewfile no longer lists extensions — the other half being that a
+hand-curated second copy of `vscode-extensions.txt` drifted to 89 entries
+against 113 installed. One list, generated, no curation.
 
 ## Sanitization (PUBLIC repo)
 
@@ -627,8 +723,10 @@ Before committing, scan for:
 | Risk                      | Where to check                                             | What to do                                                                                 |
 | ------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | API tokens / keys         | `vscode-settings.json`, `claude/settings.json`             | grep for `token`, `apiKey`, `apiToken`, `secret` — strip                                   |
-| `/Users/gus/` paths       | `claude/settings.json`, `vscode-settings.json`             | replace with `~/` or `$HOME` if portable                                                   |
+| `/Users/gus/` paths       | `claude/settings.json`, `vscode-settings.json`             | replace with `~/` or `$HOME` if portable; VSCode settings take `${userHome}`, not `~`       |
 | Per-machine auto-mode env | `claude/settings.json`                                     | strip `permissions`-adjacent `autoMode.environment` — it names real repos + worktree paths |
+| Private marketplace repos | `claude/settings.json` `extraKnownMarketplaces`            | `gh repo view <repo> --json visibility` before carrying one; a PRIVATE repo name stays out  |
+| Orca-managed hooks        | `claude/settings.json`, `kimi-code/config.toml`            | never carried — every command embeds an absolute `/Users/gus/.orca/...` path                |
 | Machine IDs               | `gitconfig` (`[coderabbit] machineId`), VSCode `sync.gist` | omit; they regen per machine                                                               |
 | Per-project trust blocks  | `codex/config.toml`                                        | strip `[projects."/Users/gus/..."]`                                                        |
 | Codex hook trust hashes   | `codex/config.toml`                                        | strip `[hooks.state."<abs path>:<event>:0:0"]` — absolute paths + `trusted_hash` values     |

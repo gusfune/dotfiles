@@ -187,8 +187,8 @@ fi
 # comment header. But the 13 Omarchy wrappers in ~/.local/bin run `mise use -g`
 # on every launch, so a link would put every ad-hoc tool install in the repo's
 # working tree. script/omarchy-bootstrap seeds it when there is nothing there.
-#   cp "${DOTFILESDIR}/mise/config.toml" ~/.config/mise/config.toml
-#   cp ~/.config/mise/config.toml "${DOTFILESDIR}/mise/config.toml"
+#   cp "${DOTFILESDIR}/mise/global.toml" ~/.config/mise/config.toml
+#   cp ~/.config/mise/config.toml "${DOTFILESDIR}/mise/global.toml"
 
 echo
 echo "Done. New shell will pick up the new .zprofile / .zshrc."
