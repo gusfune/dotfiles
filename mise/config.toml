@@ -1,5 +1,9 @@
 # Global mise tool versions — the template for ~/.config/mise/config.toml.
 #
+# One file for both machines. The `os` filters decide who gets what: mise skips
+# a tool whose `os` list does not name the current platform, so nothing
+# unreachable is ever installed.
+#
 # NOT symlinked, and not because it is unsafe: mise writes *through* a symlink
 # (the link survives, the target gets the write) and it preserves this comment
 # header across a rewrite. Both were tested against mise 2026.8.11 with
@@ -13,23 +17,37 @@
 #   cp mise/config.toml ~/.config/mise/config.toml   # repo -> home
 #   cp ~/.config/mise/config.toml mise/config.toml   # home -> repo
 #
+# Read the diff before copying home -> repo. `mise use -g` rewrites the entry
+# it touches, and whether it preserves an `os` filter is unverified. Check with
+# `mise config get tools.node` on the Omarchy box after a wrapper has run.
+#
 # `mise settings` is empty on purpose, so there is no settings.toml to carry.
 #
-# `claude` is load-bearing: bin/claude resolves the real binary through
-# ~/.local/share/mise/installs/claude/latest/ before it falls back to anything
-# else. Drop it here and the Claude Plus wrapper loses its first two candidates.
+# Why macOS only takes node and ruby: the shims are *prepended* there (see the
+# comment in .zshenv), so an unfiltered entry would put mise in front of
+# Homebrew for tools Homebrew already owns and keeps patched. Node and Ruby are
+# the two that need a version manager, and they replace nvm and rbenv.
 #
-# On macOS .zshrc falls back to nvm when mise is absent. Copying this file to a
-# Mac that has mise therefore gives you two Node managers — pick one first.
+# `claude` is load-bearing on Linux: bin/claude resolves the real binary
+# through ~/.local/share/mise/installs/claude/latest/ before it falls back to
+# anything else. It is Linux-only for exactly the same reason — a mise `claude`
+# on macOS would displace the native installer's build under
+# ~/.local/share/claude/versions/, and `claude update` would then keep
+# maintaining a binary nothing launches.
+#
+# `ruby` is pinned rather than `latest` because it inherits rbenv's only
+# version. mise prefers a precompiled Ruby and falls back to a ruby-build
+# compile, so a `latest` bump can cost half an hour of CPU.
 
 [tools]
-bun = "latest"
-claude = "latest"
-codex = "latest"
-gh = "latest"
-go = "latest"
+bun = { version = "latest", os = ["linux"] }
+claude = { version = "latest", os = ["linux"] }
+codex = { version = "latest", os = ["linux"] }
+gh = { version = "latest", os = ["linux"] }
+go = { version = "latest", os = ["linux"] }
 node = "latest"
-pnpm = "latest"
-prettier = "latest"
-python = "latest"
-uv = "latest"
+pnpm = { version = "latest", os = ["linux"] }
+prettier = { version = "latest", os = ["linux"] }
+python = { version = "latest", os = ["linux"] }
+ruby = { version = "3.4.1", os = ["macos"] }
+uv = { version = "latest", os = ["linux"] }
