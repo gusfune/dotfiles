@@ -51,7 +51,7 @@ into `$HOME` by `script/setup`. Modeled on
 | `claude/settings.json`      | **NOT** symlinked — copy manually (both ways)                                                                             |
 | `claude/statusline.sh`      | `~/.claude/statusline.sh`; a repo-internal symlink into `claude/sbx-kit/files/home/.claude/`                              |
 | `claude/sbx-kit/`           | not symlinked — an sbx mixin kit, passed to `sbx run --kit` (see [Sandbox (sbx) Claude prefs](#sandbox-sbx-claude-prefs)) |
-| `mise/config.toml`          | **NOT** symlinked — copy manually (both ways)                                                                             |
+| `mise/config.toml`          | **NOT** symlinked — copy manually (both ways); one file for both machines via `os` filters                                |
 | `kimi-code/config.toml`     | `~/.kimi-code/config.toml`                                                                                                |
 | `kimi-code/tui.toml`        | `~/.kimi-code/tui.toml`                                                                                                   |
 | `kimi-code/statusline.sh`   | `~/.kimi-code/statusline.sh` (referenced by `tui.toml` `[status_line]`)                                                   |
@@ -212,19 +212,52 @@ diff ~/.config/mise/config.toml ~/Developer/dotfiles/mise/config.toml  # drift c
 install`. It seeds only when the path is empty, so a re-run never rolls a
 working machine back to the committed snapshot.
 
-Three things to know before you edit it:
+One file serves both machines, and the `os` filters decide who gets what:
+
+```toml
+node = "latest"                                    # both
+ruby = { version = "3.4.1", os = ["macos"] }       # replaces rbenv
+bun  = { version = "latest", os = ["linux"] }      # ...and eight more
+```
+
+macOS takes only `node` and `ruby`. That is not timidity — it follows from the
+`PATH` order. The shims are **appended** on Omarchy and **prepended**
+everywhere else, so on macOS an unfiltered entry would put mise in front of
+Homebrew for a tool Homebrew already owns and keeps patched. Verified against
+mise 2026.9.10: `mise ls` on macOS lists `node` and `ruby` and skips the nine
+`os = ["linux"]` tools outright.
+
+Why prepend on macOS at all: `brew shellenv` prepends `/opt/homebrew/bin`,
+which holds a `node` that `gemini-cli` and `kimi-code` depend on and that
+therefore cannot be uninstalled, and `/usr/bin` holds a `ruby` 2.6. An appended
+shim loses to both, which would make mise decorative. The prepend is guarded by
+`[ -z "$OMARCHY_PATH" ]` in **both** `zshenv.sh` and `zprofile.sh` — the second
+one because `brew shellenv` runs in between and would otherwise bury it — and
+`~/.dotfiles/bin` is re-prepended after it so the `claude` wrapper still wins.
+
+Things to know before you edit it:
 
 - `mise settings` is empty on purpose, so there is no `settings.toml` to carry.
   `omarchy-install-dev-env` would create one (`mise settings add ruby.compile
   false`); if you ever run it, decide whether that file joins the repo too.
-- `claude = "latest"` is load-bearing. `bin/claude` resolves the real binary
+- `claude` is load-bearing **on Linux**. `bin/claude` resolves the real binary
   through `~/.local/share/mise/installs/claude/latest/` before it tries
-  anything else.
-- On macOS `.zshrc` falls back to nvm when mise is absent. Copying this file to
-  a Mac that has mise gives you two Node managers. Pick one first.
+  anything else. It is `os = ["linux"]` for the same reason: a mise `claude` on
+  macOS would displace the native installer's build under
+  `~/.local/share/claude/versions/`, and `claude update` would then keep
+  maintaining a binary nothing launches.
+- `ruby` is pinned, not `latest`. mise prefers a precompiled Ruby and falls
+  back to a ruby-build compile, so a `latest` bump can cost half an hour of CPU.
+- **Read the diff before you copy home → repo.** `mise use -g` rewrites the
+  entry it touches, and whether it preserves an `os` filter is unverified. The
+  13 Omarchy wrappers run it on every launch, so check with `mise config get
+  tools.node` on the Omarchy box before trusting the copy.
+- The tool list is global-only, so `.nvmrc` and `.node-version` files in
+  projects are ignored. nvm ignored them too without an explicit `nvm use`.
 
-The mise binary itself is pacman's (`try-omarchy-mise`, which `Conflicts With:
-mise`), so **never run `mise self-update`** — `omarchy update` owns that.
+The mise binary itself is pacman's on Arch (`try-omarchy-mise`, which
+`Conflicts With: mise`), so **never run `mise self-update`** — `omarchy update`
+owns that. On macOS it is Homebrew's, so `brew upgrade` owns it.
 
 ### Adding new Kimi Code config
 
@@ -393,6 +426,11 @@ sourced from `~/.bashrc`). Switching to zsh drops all of it, so:
   only file that runs for *every* zsh — `zsh -c 'omarchy-menu'` is not a login
   shell. It must also run *before* `path_prepend "$HOME/.dotfiles/bin"`, because
   it appends `~/.local/bin` and the claude wrapper has to stay in front.
+  Exporting `OMARCHY_PATH` is also the signal the next block reads: the mise
+  shims prepend in `zshenv.sh` and `zprofile.sh` is guarded by
+  `[ -z "$OMARCHY_PATH" ]`, so this box keeps the appended order it needs and
+  macOS gets the prepend it needs. Re-prepending here would be the bug — it
+  would put the mise-installed `claude` ahead of the wrapper.
 - `zsh/omarchy.zsh` re-implements the interactive parts worth keeping. Its
   header lists what is deliberately not carried and why.
 - `~/.bashrc` is left alone on purpose. Four `omarchy-*` commands rewrite it,
@@ -415,11 +453,15 @@ front of `~/.dotfiles/bin` on the next `cd` and silently turn the Claude Plus
 prompt off. Re-hoisting once at startup does not survive a per-prompt hook.
 
 The shims `env-bootstrap` *appends* resolve every mise tool without activate,
-and appending is exactly what keeps the wrapper in front. The cost is
-per-directory version switching, which this global-only tool list does not
+and on this box appending is exactly what keeps the wrapper in front. The cost
+is per-directory version switching, which this global-only tool list does not
 need. The one hoist that is load-bearing is `path_prepend "$HOME/.dotfiles/bin"`
 in `zprofile.sh`, straight after `~/.local/bin`. Remove that line and `claude`
 falls back to the stock prompt in login shells.
+
+macOS cannot copy the appended order — `brew shellenv` prepends
+`/opt/homebrew/bin` and would win — so it prepends the shims instead and relies
+on that same hoist. See [Adding new mise config](#adding-new-mise-config).
 
 #### What you lose by moving to zsh
 
