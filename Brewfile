@@ -3,8 +3,14 @@
 
 # ----- Taps -----
 tap "anomalyco/tap"                 # → opencode
+tap "archivebox/archivebox"         # → archivebox
 tap "buo/cask-upgrade"              # `brew cu` — useful
+tap "cloudflare/cloudflare"         # → cloudflared
+tap "docker/tap"                    # → sbx
 tap "hashicorp/tap"                 # → hcp
+tap "hookdeck/hookdeck"             # → hookdeck
+tap "libsql/sqld"                   # → sqld, turso
+tap "mongodb/brew"                  # → mongosh, mongodb tools
 tap "oven-sh/bun"                   # → bun
 tap "peonping/tap"                  # → peon-ping
 tap "pulumi/tap"                    # → esc, pulumi
@@ -13,8 +19,8 @@ tap "supabase/tap"                  # → supabase
 # ----- CLI tools -----
 brew "awscli"                       # AWS CLI
 brew "bash"                         # bash 5.x (macOS stock bash is 3.2)
-brew "cf-terraforming"              # Cloudflare config → Terraform converter
 brew "cloudflared"                  # Cloudflare tunnel client
+brew "cookiecutter"                 # Project scaffolding from templates
 brew "curl"                         # curl with newer TLS / HTTP3
 brew "doppler"                      # Secrets manager
 brew "duti"                         # Set default apps for file types / URL schemes
@@ -23,24 +29,29 @@ brew "gh"                           # GitHub CLI
 brew "git-filter-repo"              # Rewrite git history
 brew "gnupg"                        # GPG
 brew "go"                           # Go toolchain
+brew "hashicorp/tap/hcp"            # HashiCorp Cloud Platform CLI
 brew "hf"                           # HuggingFace CLI
 brew "htop"                         # Process viewer
-brew "kimi-cli"                     # MoonshotAI Kimi CLI agent
+brew "httrack"                      # Website mirroring
+brew "kimi-code"                    # Kimi Code CLI; config in kimi-code/
+brew "lazygit"                      # TUI for git
 brew "llama.cpp"                    # Local LLM inference (GGUF models)
 brew "lsd"                          # `ls` replacement; aliased in zshrc
 brew "mas"                          # Mac App Store CLI
 brew "midnight-commander"           # `mc` — TUI file manager
 brew "mise"                         # Tool version manager; shims on PATH via .zshenv
 brew "mole"                         # Disk cleanup tool
+brew "neovim"                       # `nvim` — the EDITOR fallback in zshenv
+brew "platformio"                   # Embedded dev toolchain (Pico / ESP)
 brew "pnpm"                         # Node package manager
+brew "poetry"                       # Python dependency manager
 brew "poppler"                      # PDF utilities (for pdftotext, pdfimages)
 brew "python@3.12"                  # Python
 brew "rclone"                       # Cloud storage sync
+brew "reattach-to-user-namespace"   # Fixes pbcopy inside tmux
 brew "ripgrep"                      # `rg` — fast grep
-brew "sandvault"                    # Run AI agents in sandboxed macOS user account
 brew "stripe-cli"                   # Stripe CLI
 brew "swiftlint"                    # Swift linter (iOS / macOS native)
-brew "tfenv"                        # Terraform version manager
 brew "thefuck"                      # Command corrector; sourced in zshrc
 brew "tree"                         # Directory tree view
 brew "uv"                           # Fast Python package manager
@@ -59,32 +70,44 @@ brew "supabase/tap/supabase"        # Supabase CLI
 # ----- GUI apps (casks) -----
 cask "1password"                    # Password manager
 cask "1password-cli"                # `op` CLI
+cask "antigravity-cli"              # Antigravity CLI
+cask "arduino-ide"                  # Arduino IDE
 cask "autodesk-fusion"              # Fusion 360 — CAD
 cask "beekeeper-studio"             # SQL GUI
+cask "blender"                      # 3D modelling
+cask "brave-browser"                # Browser
 cask "chatgpt"                      # ChatGPT desktop
 cask "claude"                       # Claude desktop
+cask "claude-code"                  # Claude Code desktop app
 cask "codex"                        # Codex desktop
-cask "cyberduck"                    # S3 / SFTP GUI
+cask "codex-app"                    # Codex desktop app
 cask "docker-desktop"               # Docker
-cask "elgato-stream-deck"           # Stream Deck companion
+cask "docker/tap/sbx"               # `sbx` — Docker Sandboxes for AI agents
 cask "figma"                        # Design
 cask "firefox"                      # Firefox stable channel
 cask "firefox@developer-edition"    # Firefox Developer Edition
-cask "font-hack-nerd-font"          # Terminal nerd font (icons / glyphs)
 cask "font-jetbrains-mono"          # Terminal/editor font
+cask "font-montserrat"              # Font
+cask "font-roboto"                  # Font
+cask "font-source-code-pro"         # Font
+cask "font-ubuntu"                  # Font
+cask "freecad"                      # Parametric CAD
+cask "gcloud-cli"                   # Google Cloud CLI
 cask "ghostty"                      # Terminal emulator
 cask "github"                       # GitHub Desktop (redundant with gh CLI + GitLens?)
 cask "google-chrome"                # Chrome
+cask "granola"                      # Meeting notes
 cask "imageoptim"                   # Image compression
 cask "insta360-studio"              # Insta360 webcam driver
+cask "kaleidoscope"                 # Diff tool; wired up in gitconfig.local.macos
 cask "linear"                       # Linear desktop
 cask "little-snitch"                # Network firewall
-cask "miro"                         # Whiteboard / diagramming
 cask "ngrok"                        # Tunnels (overlaps with tailscale + cloudflared?)
 cask "notion"                       # Notion
 cask "notion-calendar"              # Cron/Notion calendar
 cask "numi"                         # Calculator
 cask "obs"                          # Screen recording / streaming
+cask "obsidian"                     # Notes
 cask "postman"                      # API client
 cask "raycast"                      # Launcher
 cask "redis-insight"                # Redis GUI
@@ -92,16 +115,15 @@ cask "sf-symbols"                   # Apple system icon reference
 cask "slack"                        # Slack
 cask "spotify"                      # Music
 cask "steam"                        # Games
-cask "superset"                     # Superset desktop
 cask "tailscale-app"                # VPN mesh
 cask "the-unarchiver"               # Archives
 cask "thonny"                       # MicroPython IDE (Pico / embedded)
+cask "tower"                        # Git GUI
 cask "transmission"                 # BitTorrent client
 cask "transmit"                     # FTP/S3 GUI (overlaps with cyberduck)
 cask "tunnelbear"                   # Commercial VPN
 cask "visual-studio-code"           # VSCode
 cask "vlc"                          # Media player
-cask "warp"                         # AI-powered terminal
 cask "whatsapp"                     # Messaging
 cask "zed"                          # Zed editor
 cask "zoom"                         # Video calls
@@ -111,6 +133,8 @@ cask "zoom"                         # Video calls
 # entries for the same app — harmless, MAS handles them.
 mas "1Password for Safari", id: 1569813296
 mas "Amphetamine", id: 937984704
+mas "GarageBand", id: 682658836     # Apple preinstall
+mas "iMovie", id: 408981434         # Apple preinstall
 mas "Keynote", id: 409183694
 mas "Keynote", id: 361285480
 mas "Magnet", id: 441258766         # Window manager
@@ -120,97 +144,15 @@ mas "Pages", id: 409201541
 mas "Pages", id: 361309726
 mas "Parcel", id: 375589283         # Package tracking
 mas "Perplexity", id: 6714467650    # Perplexity AI search
-mas "PL2303Serial", id: 1624835354  # USB-serial driver (Pico / embedded)
 mas "Xcode", id: 497799835          # iOS / macOS native dev
 
 # ----- VSCode extensions -----
-# Dupes / dead extensions flagged; prune before reinstall.
-vscode "aaron-bond.better-comments"
-vscode "alefragnani.bookmarks"
-vscode "amazonwebservices.aws-toolkit-vscode"
-vscode "ambar.bundle-size"
-vscode "antfu.file-nesting"
-vscode "antfu.smart-clicks"
-vscode "anthropic.claude-code"
-vscode "apollographql.vscode-apollo"
-vscode "arcanis.vscode-zipfs"
-vscode "be5invis.vscode-custom-css"
-vscode "bierner.emojisense"
-vscode "bradlc.vscode-tailwindcss"
-vscode "christopherstyles.html-entities"
-vscode "coderabbit.coderabbit-vscode"
-vscode "csstools.postcss"
-vscode "davidanson.vscode-markdownlint"
-vscode "dbaeumer.vscode-eslint"
-vscode "docker.docker"                        # NEW official Docker ext
-vscode "dracula-theme-pro.theme-dracula-pro"  # Dracula Pro (pick one)
-vscode "drknoxy.eslint-disable-snippets"
-vscode "dsznajder.es7-react-js-snippets"
-vscode "eamodio.gitlens"
-vscode "ecmel.vscode-html-css"
-vscode "eg2.vscode-npm-script"
-vscode "eriklynd.json-tools"
-vscode "esbenp.prettier-vscode"
-vscode "firefox-devtools.vscode-firefox-debug"
-vscode "formulahendry.auto-rename-tag"
-vscode "github.codespaces"
-vscode "github.copilot-chat"
-vscode "github.vscode-github-actions"
-vscode "github.vscode-pull-request-github"
-vscode "graphql.vscode-graphql"
-vscode "graphql.vscode-graphql-execution"
-vscode "graphql.vscode-graphql-syntax"
-vscode "gruntfuggly.todo-tree"
-vscode "hashicorp.terraform"
-vscode "heybourn.headwind"                    # Tailwind class sort
-vscode "htmlhint.vscode-htmlhint"
-vscode "ibm.output-colorizer"
-vscode "kamikillerto.vscode-colorize"
-vscode "mechatroner.rainbow-csv"
-vscode "mikestead.dotenv"
-vscode "ms-azuretools.vscode-containers"
-vscode "ms-dotnettools.vscode-dotnet-runtime"
-vscode "ms-kubernetes-tools.vscode-kubernetes-tools"
-vscode "ms-python.debugpy"
-vscode "ms-python.isort"
-vscode "ms-python.python"
-vscode "ms-python.vscode-pylance"
-vscode "ms-python.vscode-python-envs"
-vscode "ms-toolsai.jupyter"
-vscode "ms-toolsai.jupyter-keymap"
-vscode "ms-toolsai.jupyter-renderers"
-vscode "ms-toolsai.vscode-jupyter-cell-tags"
-vscode "ms-toolsai.vscode-jupyter-slideshow"
-vscode "ms-vscode-remote.remote-containers"
-vscode "ms-vscode-remote.remote-ssh"
-vscode "ms-vscode-remote.remote-ssh-edit"
-vscode "ms-vscode-remote.vscode-remote-extensionpack"
-vscode "ms-vscode.remote-explorer"
-vscode "ms-vscode.remote-server"
-vscode "nixon.env-cmd-file-syntax"
-vscode "openai.chatgpt"
-vscode "orta.vscode-jest"
-vscode "oven.bun-vscode"
-vscode "pnp.polacode"                         # Code screenshot tool
-vscode "pulkitgangwar.nextjs-snippets"
-vscode "quicktype.quicktype"
-vscode "rangav.vscode-thunder-client"
-vscode "redhat.vscode-commons"
-vscode "redhat.vscode-yaml"
-vscode "rust-lang.rust-analyzer"
-vscode "seatonjiang.gitmoji-vscode"
-vscode "shopify.theme-check-vscode"
-vscode "silvenon.mdx"
-vscode "sissel.shopify-liquid"
-vscode "sleistner.vscode-fileutils"
-vscode "statelyai.stately-vscode"
-vscode "stkb.rewrap"
-vscode "tamasfe.even-better-toml"
-vscode "tamj0rd2.ts-quickfixes-extension"
-vscode "unifiedjs.vscode-mdx"
-vscode "usernamehw.errorlens"
-vscode "vivaxy.vscode-conventional-commits"
-vscode "vscode-icons-team.vscode-icons"
-vscode "wayou.vscode-todo-highlight"
-vscode "wmaurer.change-case"
-vscode "yzhang.markdown-all-in-one"
+# Deliberately empty. `vscode-extensions.txt` owns the list — it is a straight
+# `code --list-extensions` snapshot, so it cannot drift the way a hand-curated
+# second copy here did (it was 89 entries against 113 installed). Restore with:
+#
+#   xargs -L1 code --install-extension < vscode-extensions.txt
+#
+# Keeping them here would also make the drift check lie: `brew bundle dump`
+# silently omits the whole vscode section when `code` is not on PATH, so every
+# entry then reads as uninstalled.

@@ -639,8 +639,12 @@ entries — the inline comment style is "what the package does", not "why kept"
 
 ### Refreshing VSCode extensions list
 
+`vscode-extensions.txt` is the **only** list of extensions. The Brewfile used to
+carry a second, hand-curated one; it is gone. Refresh and restore:
+
 ```bash
-code --list-extensions > ~/Developer/dotfiles/vscode-extensions.txt
+code --list-extensions > ~/Developer/dotfiles/vscode-extensions.txt   # snapshot
+xargs -L1 code --install-extension < vscode-extensions.txt            # restore
 ```
 
 ### Drift check
@@ -648,9 +652,12 @@ code --list-extensions > ~/Developer/dotfiles/vscode-extensions.txt
 ```bash
 brew bundle dump --file=/tmp/Brewfile.current --force
 
-# Reduce both files to "<type> <name>" pairs, then compare.
+# Reduce both files to "<type> <name>" pairs, then compare. `vscode` is
+# deliberately excluded — the Brewfile no longer carries extensions, so
+# including it would report all 113 installed ones as drift forever. Check
+# those against vscode-extensions.txt instead (next block).
 norm() {
-  awk '/^(tap|brew|cask|mas|vscode|npm) /{
+  awk '/^(tap|brew|cask|mas|npm) /{
     t = $1
     if (match($0, /"[^"]+"/)) print t, substr($0, RSTART, RLENGTH)
   }' "$1" | LC_ALL=C sort -u
@@ -660,6 +667,10 @@ norm /tmp/Brewfile.current         > /tmp/b.live
 
 LC_ALL=C comm -23 /tmp/b.repo /tmp/b.live   # in repo, not installed
 LC_ALL=C comm -13 /tmp/b.repo /tmp/b.live   # installed, not in repo
+
+# VSCode extensions live in their own file, so their check is a plain diff.
+diff <(sort ~/Developer/dotfiles/vscode-extensions.txt) \
+     <(code --list-extensions | sort)
 ```
 
 Normalise **both** sides or the result is noise. Two traps, both hit for real:
@@ -673,9 +684,12 @@ Normalise **both** sides or the result is noise. Two traps, both hit for real:
   directions. Use `awk`. `LC_ALL=C` matters too: `comm` needs both inputs in
   the same collation as the `sort` that produced them.
 
-The `mas` and `vscode` lines only appear if `mas` and `code` are on `PATH` when
-the dump runs; a missing CLI silently drops that whole section from the dump and
-every entry of that type then reads as "uninstalled".
+The `mas` lines only appear if `mas` is on `PATH` when the dump runs; a missing
+CLI silently drops that whole section from the dump and every entry of that type
+then reads as "uninstalled". `vscode` had the same failure mode, which is half
+the reason the Brewfile no longer lists extensions — the other half being that a
+hand-curated second copy of `vscode-extensions.txt` drifted to 89 entries
+against 113 installed. One list, generated, no curation.
 
 ## Sanitization (PUBLIC repo)
 
