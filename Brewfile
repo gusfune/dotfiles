@@ -30,12 +30,11 @@ brew "llama.cpp"                    # Local LLM inference (GGUF models)
 brew "lsd"                          # `ls` replacement; aliased in zshrc
 brew "mas"                          # Mac App Store CLI
 brew "midnight-commander"           # `mc` — TUI file manager
+brew "mise"                         # Tool version manager; shims on PATH via .zshenv
 brew "mole"                         # Disk cleanup tool
-brew "nvm"                          # Node version manager; sourced in zshrc
 brew "pnpm"                         # Node package manager
 brew "poppler"                      # PDF utilities (for pdftotext, pdfimages)
 brew "python@3.12"                  # Python
-brew "rbenv"                        # Ruby version manager; sourced in zprofile
 brew "rclone"                       # Cloud storage sync
 brew "ripgrep"                      # `rg` — fast grep
 brew "sandvault"                    # Run AI agents in sandboxed macOS user account

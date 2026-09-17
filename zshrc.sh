@@ -46,27 +46,24 @@ for _zsh_hl in \
 done
 unset _zsh_hl
 
-# Node comes from nvm on macOS and mise on Omarchy.
+# Node and Ruby come from mise on both machines. The shims are already on PATH
+# by the time this file runs — appended by env-bootstrap on Omarchy, prepended
+# by .zshenv everywhere else — so there is nothing to init here.
 #
-# There is deliberately no `mise activate zsh` here. activate re-asserts PATH
-# from a precmd hook on every prompt and prepends mise's *install* directories,
-# one of which holds a real `claude` — so it would jump in front of
-# ~/.dotfiles/bin on the next `cd` and silently stop the Claude Plus system
-# prompt from being applied. Re-hoisting once at startup does not survive that.
+# There is deliberately no `mise activate zsh`. activate re-asserts PATH from a
+# precmd hook on every prompt and prepends mise's *install* directories, one of
+# which holds a real `claude` — so it would jump in front of ~/.dotfiles/bin on
+# the next `cd` and silently stop the Claude Plus system prompt from being
+# applied. Re-hoisting once at startup does not survive that.
 #
-# The shims env-bootstrap appends resolve every mise tool on their own, and they
-# are appended rather than prepended, which is exactly what keeps the wrapper in
-# front. The cost is per-directory version switching, and this mise config is
-# global-only (bun, claude, codex, gh, node — all "latest").
+# The shims resolve every mise tool on their own. The cost is per-directory
+# version switching: mise/config.toml is global-only, so haus/.nvmrc (22) and
+# next.js/.node-version (v20) are ignored. nvm ignored them too without an
+# explicit `nvm use`, so nothing regressed.
 if command -v mise >/dev/null; then
   # mise swaps binaries under a stable shim path, so a cached command hash goes
   # stale. Omarchy's bash layer does the same thing with `set +h`.
   unsetopt HASH_CMDS HASH_DIRS
-else
-  export NVM_DIR="$HOME/.nvm"
-  [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && . "/opt/homebrew/opt/nvm/nvm.sh"
-  [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \
-    . "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
 fi
 
 # Bun completions.

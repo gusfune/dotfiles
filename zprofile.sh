@@ -11,9 +11,6 @@ for _brew in /opt/homebrew/bin/brew /usr/local/bin/brew \
 done
 unset _brew
 
-# rbenv.
-command -v rbenv >/dev/null && eval "$(rbenv init - --no-rehash zsh)"
-
 # path_prepend / path_append are defined in .zshenv, which always runs first.
 # The mise shims are prepended a second time because brew shellenv above would
 # otherwise bury what .zshenv put in front — the same reason ~/.dotfiles/bin is
