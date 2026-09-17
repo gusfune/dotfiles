@@ -86,6 +86,7 @@ cask "docker/tap/sbx"               # `sbx` — Docker Sandboxes for AI agents
 cask "figma"                        # Design
 cask "firefox"                      # Firefox stable channel
 cask "firefox@developer-edition"    # Firefox Developer Edition
+cask "font-hack-nerd-font"          # ghostty/config.macos asks for it — expect a drift hit
 cask "font-jetbrains-mono"          # Terminal/editor font
 cask "font-montserrat"              # Font
 cask "font-roboto"                  # Font

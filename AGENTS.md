@@ -692,6 +692,12 @@ diff <(sort ~/Developer/dotfiles/vscode-extensions.txt) \
      <(code --list-extensions | sort)
 ```
 
+One entry is expected to show up as "in repo, not installed" forever:
+`font-hack-nerd-font`. `ghostty/config.macos` names Hack Nerd Font Mono as its
+first family, but on this machine the font sits in `~/Library/Fonts` as loose
+TTFs rather than as the cask. The line stays because a fresh machine restoring
+from the Brewfile needs the font; the drift hit is the cost.
+
 Normalise **both** sides or the result is noise. Two traps, both hit for real:
 
 - A bare `diff` of the two files strips comments from the repo side only, so
