@@ -40,6 +40,23 @@ path_append()  { [ -d "$1" ] || return; PATH=":${PATH//:$1:/:}"; PATH="${PATH#:}
 [ -r /usr/share/omarchy/default/bash/env-bootstrap ] && \
   . /usr/share/omarchy/default/bash/env-bootstrap
 
+# mise shims. Omarchy already appended these in env-bootstrap above, and
+# $OMARCHY_PATH is the signal that it happened; every other machine prepends
+# them here. Prepending is what lets mise own node and ruby on macOS: brew
+# shellenv prepends /opt/homebrew/bin, which holds a node that gemini-cli and
+# kimi-code depend on and that therefore cannot be uninstalled, and /usr/bin
+# holds a ruby 2.6. An appended shim loses to both.
+#
+# Re-running this on Omarchy would not be harmless: path_prepend strips the
+# entry and re-adds it at the front, which would put the mise-installed claude
+# ahead of the wrapper below on the very next shell.
+#
+# Deliberately not `mise activate zsh` — see the comment in .zshrc. The shims
+# directory does not exist until the first `mise install` and path_prepend
+# returns early when a directory is missing, so a fresh machine needs
+# `mise install` and then a new shell.
+[ -z "$OMARCHY_PATH" ] && path_prepend "$HOME/.local/share/mise/shims"
+
 # bin/claude shadows the real Claude Code launcher so every session gets the
 # Claude Plus system prompt. It lives here, not in .zprofile, because VS Code
 # terminals, tmux panes, subshells and scripts are not login shells and would

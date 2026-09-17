@@ -15,6 +15,10 @@ unset _brew
 command -v rbenv >/dev/null && eval "$(rbenv init - --no-rehash zsh)"
 
 # path_prepend / path_append are defined in .zshenv, which always runs first.
+# The mise shims are prepended a second time because brew shellenv above would
+# otherwise bury what .zshenv put in front — the same reason ~/.dotfiles/bin is
+# prepended twice below. Omarchy is excluded: env-bootstrap appends them there.
+[ -z "$OMARCHY_PATH" ] && path_prepend "$HOME/.local/share/mise/shims"
 path_prepend "$HOME/.bun/bin"
 path_prepend "$HOME/.local/bin"
 # Re-hoist after .local/bin. .zshenv already put this first, but the prepends
