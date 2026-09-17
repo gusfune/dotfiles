@@ -102,6 +102,25 @@ cp ~/.claude/settings.json ~/Developer/dotfiles/claude/settings.json  # home -> 
 # then drop autoMode.environment + anything naming a private repo or /Users/gus path
 ```
 
+**Never copy home → repo wholesale.** Three things in the live file must not
+land here, and a blind `cp` brings all of them:
+
+- **Orca's hooks.** They appear in nearly every event, including events the repo
+  already populates, and each command embeds an absolute
+  `/Users/gus/.orca/agent-hooks/...` path. Orca manages them in the live file.
+  Take the repo's `hooks` block unchanged; carry nothing from live.
+- **The `baerskin-*` plugins and the `baerskin-config` marketplace.**
+  `baerskin/agents-config` is a **private** repo, so naming it here publishes
+  it. Checked with `gh repo view <repo> --json visibility`. Do that check before
+  carrying any new marketplace.
+- **The inline `statusLine`.** The repo's one-liner is
+  `~/.claude/statusline.sh`; the live file may still hold the ~3 KB inline
+  version it replaced. The repo is ahead here, not behind.
+
+`enabledPlugins` and `extraKnownMarketplaces` are sorted by key in the repo
+copy. Claude writes them in insertion order, so sorting is what keeps the next
+diff readable instead of a reshuffle.
+
 `codex/config.toml` is **not** symlinked either (per-machine `notify` +
 `[projects.*]` trust blocks live in real `~/.codex/config.toml`). To update the
 template:
@@ -700,6 +719,8 @@ Before committing, scan for:
 | API tokens / keys         | `vscode-settings.json`, `claude/settings.json`             | grep for `token`, `apiKey`, `apiToken`, `secret` — strip                                   |
 | `/Users/gus/` paths       | `claude/settings.json`, `vscode-settings.json`             | replace with `~/` or `$HOME` if portable                                                   |
 | Per-machine auto-mode env | `claude/settings.json`                                     | strip `permissions`-adjacent `autoMode.environment` — it names real repos + worktree paths |
+| Private marketplace repos | `claude/settings.json` `extraKnownMarketplaces`            | `gh repo view <repo> --json visibility` before carrying one; a PRIVATE repo name stays out  |
+| Orca-managed hooks        | `claude/settings.json`, `kimi-code/config.toml`            | never carried — every command embeds an absolute `/Users/gus/.orca/...` path                |
 | Machine IDs               | `gitconfig` (`[coderabbit] machineId`), VSCode `sync.gist` | omit; they regen per machine                                                               |
 | Per-project trust blocks  | `codex/config.toml`                                        | strip `[projects."/Users/gus/..."]`                                                        |
 | Codex hook trust hashes   | `codex/config.toml`                                        | strip `[hooks.state."<abs path>:<event>:0:0"]` — absolute paths + `trusted_hash` values     |
