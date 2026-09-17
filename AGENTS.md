@@ -723,7 +723,7 @@ Before committing, scan for:
 | Risk                      | Where to check                                             | What to do                                                                                 |
 | ------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | API tokens / keys         | `vscode-settings.json`, `claude/settings.json`             | grep for `token`, `apiKey`, `apiToken`, `secret` — strip                                   |
-| `/Users/gus/` paths       | `claude/settings.json`, `vscode-settings.json`             | replace with `~/` or `$HOME` if portable                                                   |
+| `/Users/gus/` paths       | `claude/settings.json`, `vscode-settings.json`             | replace with `~/` or `$HOME` if portable; VSCode settings take `${userHome}`, not `~`       |
 | Per-machine auto-mode env | `claude/settings.json`                                     | strip `permissions`-adjacent `autoMode.environment` — it names real repos + worktree paths |
 | Private marketplace repos | `claude/settings.json` `extraKnownMarketplaces`            | `gh repo view <repo> --json visibility` before carrying one; a PRIVATE repo name stays out  |
 | Orca-managed hooks        | `claude/settings.json`, `kimi-code/config.toml`            | never carried — every command embeds an absolute `/Users/gus/.orca/...` path                |
