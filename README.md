@@ -63,7 +63,7 @@ over SSH is not recoverable from a login prompt.
 | `ghostty/config.macos`                            | Ghostty config, macOS only — Dracula Pro (Van Helsing) palette, font, cursor              |
 | `zsh/omarchy.zsh`                                 | Omarchy's bash-only shell layer, re-implemented for zsh                                   |
 | `omarchy/`                                        | Hyprland overrides, the Omarchy shell config, and the Dracula Pro theme ([README](./omarchy/README.md)) |
-| `mise/config.toml`                                | Global mise tool list — copy-by-hand template (not symlinked)                             |
+| `mise/global.toml`                                | Global mise tool list — copy-by-hand template (not symlinked)                             |
 | `Archfile`                                        | pacman + AUR manifest — the Linux counterpart of `Brewfile`                               |
 | `script/arch-bundle`                              | `brew bundle` for pacman + AUR (`install` / `dump` / `check`)                              |
 | `script/omarchy-bootstrap`                        | Packages, Oh My Zsh, theme, `chsh` — the parts `setup` won't do                            |
@@ -108,16 +108,18 @@ absolute.
 
 ## mise tools (manual step)
 
-mise owns Node and Ruby on both machines. `mise/config.toml` is one shared
+mise owns Node and Ruby on both machines. `mise/global.toml` is one shared
 tool list with `os` filters — macOS takes `node` and `ruby`, Omarchy takes those
-plus nine more — and it is **not** symlinked, because the Omarchy wrappers in
+plus nine more. It is called `global.toml` rather than `config.toml` because
+mise auto-detects `mise/config.toml` as a project-local config, and an
+untrusted one breaks every shim inside this repo. It is **not** symlinked because the Omarchy wrappers in
 `~/.local/bin` rewrite the live file on every launch and a link would put every
 ad-hoc tool install in this repo's working tree.
 
 On a new machine:
 
 ```bash
-cp ~/Developer/dotfiles/mise/config.toml ~/.config/mise/config.toml
+cp ~/Developer/dotfiles/mise/global.toml ~/.config/mise/config.toml
 mise install
 exec zsh -l          # the shims directory only exists after the first install
 ```
@@ -129,8 +131,8 @@ To pull a newly added tool back into the repo, copy the other way — and read
 the diff first, because `mise use -g` may have rewritten unrelated entries:
 
 ```bash
-diff ~/.config/mise/config.toml ~/Developer/dotfiles/mise/config.toml
-cp   ~/.config/mise/config.toml ~/Developer/dotfiles/mise/config.toml
+diff ~/.config/mise/config.toml ~/Developer/dotfiles/mise/global.toml
+cp   ~/.config/mise/config.toml ~/Developer/dotfiles/mise/global.toml
 ```
 
 The shims are **appended** to `PATH` on Omarchy (by Omarchy's `env-bootstrap`)

@@ -51,7 +51,7 @@ into `$HOME` by `script/setup`. Modeled on
 | `claude/settings.json`      | **NOT** symlinked — copy manually (both ways)                                                                             |
 | `claude/statusline.sh`      | `~/.claude/statusline.sh`; a repo-internal symlink into `claude/sbx-kit/files/home/.claude/`                              |
 | `claude/sbx-kit/`           | not symlinked — an sbx mixin kit, passed to `sbx run --kit` (see [Sandbox (sbx) Claude prefs](#sandbox-sbx-claude-prefs)) |
-| `mise/config.toml`          | **NOT** symlinked — copy manually (both ways); one file for both machines via `os` filters                                |
+| `mise/global.toml`          | **NOT** symlinked — copy manually (both ways); one file for both machines via `os` filters                                |
 | `kimi-code/config.toml`     | `~/.kimi-code/config.toml`                                                                                                |
 | `kimi-code/tui.toml`        | `~/.kimi-code/tui.toml`                                                                                                   |
 | `kimi-code/statusline.sh`   | `~/.kimi-code/statusline.sh` (referenced by `tui.toml` `[status_line]`)                                                   |
@@ -190,7 +190,22 @@ Caveats worth knowing:
 
 ### Adding new mise config
 
-`mise/config.toml` is the global tool list. It is **not** symlinked, and the
+`mise/global.toml` is the global tool list. **The filename matters.** It cannot
+be `mise/config.toml`, because that is one of the paths mise auto-detects as a
+project-local config — and a detected-but-untrusted config is a hard error,
+not a warning. While the file had that name, every mise command *and every
+shim* run from inside this repo failed:
+
+```
+$ cd ~/Developer/dotfiles && node -v
+mise ERROR Config files in ~/Developer/dotfiles/mise/config.toml are not trusted.
+```
+
+`mise trust` clears it per machine, but the trust record is content-hashed, so
+every edit to the tool list would break `node` in this repo again. A filename
+mise does not look for carries no state at all. Do not rename it back.
+
+It is **not** symlinked either, and the
 reason is churn, not danger. Both halves of the usual worry were tested against
 mise 2026.8.11 with `MISE_GLOBAL_CONFIG_FILE` pointed at a throwaway copy: mise
 writes *through* a symlink (the link survives, the target takes the write) and
@@ -202,10 +217,10 @@ What it cannot survive is the noise. Each of the 13 Omarchy wrappers in
 tool install as an uncommitted change in this repo. Copy by hand instead:
 
 ```bash
-cp ~/Developer/dotfiles/mise/config.toml ~/.config/mise/config.toml  # repo -> home
-cp ~/.config/mise/config.toml ~/Developer/dotfiles/mise/config.toml  # home -> repo
+cp ~/Developer/dotfiles/mise/global.toml ~/.config/mise/config.toml  # repo -> home
+cp ~/.config/mise/config.toml ~/Developer/dotfiles/mise/global.toml  # home -> repo
 mise install                                                         # apply
-diff ~/.config/mise/config.toml ~/Developer/dotfiles/mise/config.toml  # drift check
+diff ~/.config/mise/config.toml ~/Developer/dotfiles/mise/global.toml  # drift check
 ```
 
 `script/omarchy-bootstrap` seeds the file on a fresh box and then runs `mise

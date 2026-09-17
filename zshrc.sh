@@ -57,7 +57,7 @@ unset _zsh_hl
 # applied. Re-hoisting once at startup does not survive that.
 #
 # The shims resolve every mise tool on their own. The cost is per-directory
-# version switching: mise/config.toml is global-only, so haus/.nvmrc (22) and
+# version switching: mise/global.toml is global-only, so haus/.nvmrc (22) and
 # next.js/.node-version (v20) are ignored. nvm ignored them too without an
 # explicit `nvm use`, so nothing regressed.
 if command -v mise >/dev/null; then

@@ -1,5 +1,14 @@
 # Global mise tool versions — the template for ~/.config/mise/config.toml.
 #
+# The filename is `global.toml`, not `config.toml`, and that is load-bearing.
+# `mise/config.toml` is one of the paths mise auto-detects as a *project-local*
+# config, so while the file had that name every mise command and every shim run
+# from inside this repo died with "Config files in ~/Developer/dotfiles/
+# mise/config.toml are not trusted" — `node -v` and `ruby -v` included.
+# `mise trust` would fix it per machine, but it is content-hashed, so every
+# edit to this file would break it again. A name mise does not look for has no
+# such state. Do not rename it back.
+#
 # One file for both machines. The `os` filters decide who gets what: mise skips
 # a tool whose `os` list does not name the current platform, so nothing
 # unreachable is ever installed.
@@ -14,8 +23,8 @@
 # `omarchy-install-dev-env` adds more, so a linked file would turn every
 # ad-hoc tool install into an uncommitted diff in this repo.
 #
-#   cp mise/config.toml ~/.config/mise/config.toml   # repo -> home
-#   cp ~/.config/mise/config.toml mise/config.toml   # home -> repo
+#   cp mise/global.toml ~/.config/mise/config.toml   # repo -> home
+#   cp ~/.config/mise/config.toml mise/global.toml   # home -> repo
 #
 # Read the diff before copying home -> repo. `mise use -g` rewrites the entry
 # it touches, and whether it preserves an `os` filter is unverified. Check with
