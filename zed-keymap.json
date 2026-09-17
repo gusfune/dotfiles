@@ -1,5 +1,10 @@
 // Zed keymap — ~/.config/zed/keymap.json
 //
+// `secondary-` is Zed's portable modifier: cmd on macOS, ctrl on Windows and
+// Linux. These bindings used to hardcode cmd-c / cmd-v, which made them inert
+// on the Omarchy box — the keystrokes were sent, nothing was bound to them.
+// https://zed.dev/docs/key-bindings
+//
 // Note: Zed does NOT have a direct equivalent of VSCode's
 // `editor.action.insertSnippet` with `$CLIPBOARD` variable expansion.
 // The closest approximation uses `workspace::SendKeystrokes` to chain
@@ -15,12 +20,12 @@
       // ctrl-1 — copy selection, newline, wrap as console.log('<clipboard>')
       "ctrl-1": [
         "workspace::SendKeystrokes",
-        "cmd-c enter c o n s o l e . l o g ( shift-' cmd-v shift-' shift-9"
+        "secondary-c enter c o n s o l e . l o g ( shift-' secondary-v shift-' shift-9"
       ],
       // ctrl-2 — same but labeled: console.log('<clipboard>:', <clipboard>)
       "ctrl-2": [
         "workspace::SendKeystrokes",
-        "cmd-c enter c o n s o l e . l o g ( shift-' cmd-v : shift-' , space cmd-v shift-9"
+        "secondary-c enter c o n s o l e . l o g ( shift-' secondary-v : shift-' , space secondary-v shift-9"
       ]
     }
   }

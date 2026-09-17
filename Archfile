@@ -1,0 +1,141 @@
+# Archfile — pacman + AUR manifest for Omarchy (Arch Linux) boxes.
+# The Linux counterpart of Brewfile. Inline comments say what each package is
+# for, same style as the Brewfile.
+#
+#   ./script/arch-bundle install   # install everything listed
+#   ./script/arch-bundle dump      # rewrite from what is explicitly installed
+#   ./script/arch-bundle check     # drift, both directions
+#
+# Only *explicitly installed* packages are listed — pacman pulls dependencies
+# in on its own, and listing them would bury the signal (637 packages vs 90).
+#
+# Not listed because nothing installs them through pacman: Zed (upstream script,
+# ~/.local/zed.app), Homebrew/Linuxbrew, and the mise-managed tools (bun, claude,
+# codex, gh, node — see ~/.config/mise/config.toml). Listing them would show up
+# as permanent phantom drift in `arch-bundle check`.
+#
+# `try-omarchy-mise` is this guest image's pinned mise. Omarchy migration
+# 1786952219 swaps it for `mise-bin`, so expect that line to read as drift
+# after an `omarchy update` — re-dump rather than reinstalling it.
+#
+# ghostty sits in the AUR section because that is where `dump` files a foreign
+# package, but no repo carries it for aarch64 — Arch builds it for x86_64 only.
+# Here it is a local package built from the upstream prebuilt binary, so
+# `arch-bundle install` on a fresh aarch64 box falls through to `yay -S ghostty`
+# and builds it from source, which is slow and needs zig.
+
+# ----- repo -----
+
+# What this repo's config needs and a stock Omarchy install does not have.
+zsh                     # login shell; .zshenv/.zprofile/.zshrc come from this repo
+zsh-syntax-highlighting # fish-like highlighting, styled by zsh/dracula-highlight.zsh
+zsh-completions         # completion definitions oh-my-zsh does not ship
+lsd                     # `ls` replacement, aliased in zshrc — same as the mac
+bc                      # arbitrary-precision calc; the Claude/Kimi status lines divide with it
+git-lfs                 # gitconfig sets filter.lfs.required, so LFS repos fail without it
+git-delta               # syntax-highlighting diff pager, the SSH-friendly Kaleidoscope
+meld                    # GUI three-way mergetool, wired up in gitconfig.local.linux
+lsof                    # backs the find_port alias in zshrc
+ttf-hack-nerd           # terminal font, first choice in ghostty/config.macos
+wget                    # fetch things curl's flags make awkward
+tree                    # directory listing for when lsd --tree is too clever
+tailscale               # mesh VPN; the omarchy.tailscale bar widget reads its status
+
+# Everything below came with the Omarchy install; kept so this file also
+# documents a full restore.
+archlinuxarm-keyring
+base
+base-devel
+bash-completion
+bat
+btop
+chromium
+coreutils
+dbus
+desktop-file-utils
+dua-cli
+e2fsprogs
+eza
+fakeroot
+fastfetch
+fd
+fontconfig
+foot
+fzf
+git
+github-cli
+gnome-keyring
+grim
+gum
+gvfs
+hyprland
+hyprpicker
+hyprsunset
+imagemagick
+imv
+inotify-tools
+jq
+less
+libnotify
+libsecret
+linux-aarch64
+linux-aarch64-headers
+mesa
+mkinitcpio
+mpv
+nautilus
+neovim
+networkmanager
+noto-fonts
+noto-fonts-emoji
+omarchy-keyring
+openssh
+pacman-contrib
+pipewire
+pipewire-alsa
+pipewire-pulse
+polkit
+python
+qt6-imageformats
+qt6-wayland
+quickshell
+ripgrep
+sddm
+sed
+shared-mime-info
+slurp
+socat
+starship
+sudo
+systemd
+systemd-resolvconf
+tmux
+try-omarchy-mise
+try-omarchy-runtime
+try-omarchy-ttfx
+try-omarchy-yay
+ttf-jetbrains-mono-nerd
+udiskie
+unzip
+uwsm
+v4l2loopback-dkms
+vulkan-swrast
+wayland
+wireplumber
+wl-clipboard
+woff2-font-awesome
+xdg-desktop-portal-gtk
+xdg-desktop-portal-hyprland
+xdg-user-dirs
+xdg-utils
+xorg-xwayland
+zoxide
+zram-generator
+zstd
+
+# ----- aur -----
+beekeeper-studio-bin    # SQL client for MySQL, Postgres, SQLite, SQL Server
+brave-origin-bin
+ghostty                 # terminal; local aarch64 build, see the note above
+onorca-bin              # Orca; IDE for parallel coding agents. WARNING: rewrites
+                        # ~/.claude/settings.json and ~/.codex/config.toml wholesale

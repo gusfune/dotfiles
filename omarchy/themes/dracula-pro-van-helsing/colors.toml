@@ -1,0 +1,66 @@
+# Dracula Pro — Van Helsing.
+#
+# The same palette as ghostty/config.macos and as workbench.colorTheme in
+# vscode-settings.json, so a shell looks the same wherever it is opened.
+# Values verified against the dracula-pro-van-helsing.json shipped in the
+# Dracula Pro VS Code extension.
+#
+# Omarchy generates every other theme file from this one at `omarchy theme set`
+# time, EXCEPT any file the theme ships itself. This theme ships four terminal
+# colour files; see the note at the bottom for why.
+
+mode = "dark"
+
+# Cyan is the accent Dracula uses for focus rings and active borders. It drives
+# the Hyprland active border, the bar, the lock screen and the launcher.
+accent = "#80FFEA"
+
+background         = "#0B0D0F"
+dark_background    = "#07090A"
+darker_background  = "#040506"
+# ANSI black doubles as the raised-surface colour for btop, helix and the bar.
+lighter_background = "#22212C"
+
+foreground         = "#F8F8F2"
+light_foreground   = "#F8F8F2"
+bright_foreground  = "#FFFFFF"
+# Van Helsing's comment colour. Used for dimmed and secondary text.
+dark_foreground    = "#708CA9"
+muted              = "#708CA9"
+
+selection            = "#414D58"
+selection_background = "#414D58"
+# Without this Omarchy derives it from bright_foreground and selected text goes
+# pure white instead of the off-white the rest of the palette uses.
+selection_foreground = "#F8F8F2"
+
+red     = "#FF9580"
+green   = "#8AFF80"
+yellow  = "#FFFF80"
+blue    = "#9580FF"
+magenta = "#FF80BF"
+cyan    = "#80FFEA"
+orange  = "#FFCA80"
+
+bright_red     = "#FFAA99"
+bright_green   = "#A2FF99"
+bright_yellow  = "#FFFF99"
+bright_blue    = "#AA99FF"
+bright_magenta = "#FF99CC"
+bright_cyan    = "#99FFEE"
+
+hyprland_active_border   = "cyan blue 45deg"
+hyprland_inactive_border = "rgba(364049cc)"
+
+# Why this theme ships alacritty.toml / foot.ini / ghostty.conf / kitty.conf
+# instead of letting the templates generate them:
+#
+# omarchy-theme-color forces `color0 = background` unconditionally, and every
+# terminal template emits `palette 0 = {{ background }}`. Dracula Pro separates
+# the two on purpose — the background is #0B0D0F but ANSI black is #22212C — so
+# a generated file would render ANSI black invisible against the background and
+# break any TUI that draws with color0. The templates would also set the cursor
+# to pure white rather than the palette's off-white.
+#
+# Keep those four files in step with $OMARCHY_PATH/default/themed/*.tpl when
+# Omarchy adds keys; the drift check in AGENTS.md covers it.

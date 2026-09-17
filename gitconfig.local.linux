@@ -1,0 +1,43 @@
+# Linux-only git extras. Installed as ~/.gitconfig.local by script/setup and
+# pulled in by the [include] at the top of gitconfig. The macOS sibling is
+# gitconfig.local.macos (Kaleidoscope, which has no Linux build).
+#
+# Layering note: git reads ~/.config/git/config BEFORE ~/.gitconfig, and later
+# wins. So this repo's gitconfig already beats the file Omarchy seeds — user.email
+# (noreply over pm.me) and init.defaultBranch (main over master) both come from
+# the repo, while Omarchy's harmless extras (diff.algorithm, column.ui,
+# branch.sort, commit.verbose) are inherited for free. Leave Omarchy's file
+# alone: omarchy-reinstall-configs rewrites it, so edits there are a fight you
+# re-lose on every upgrade.
+
+# Omarchy seeds ~/.config/git/config with this helper pinned to a *versioned*
+# mise install path (.../gh/2.100.0/...), which breaks the first time mise
+# upgrades gh. The empty `helper =` resets the inherited list; `gh` resolved
+# through PATH is always the current version.
+[credential "https://github.com"]
+	helper =
+	helper = !gh auth git-credential
+[credential "https://gist.github.com"]
+	helper =
+	helper = !gh auth git-credential
+
+# meld for the rare three-way merge that genuinely wants a window. A difftool
+# only runs when you ask for it by name, so a missing meld costs nothing.
+[mergetool "meld"]
+	cmd = meld "$LOCAL" "$MERGED" "$REMOTE" --output "$MERGED"
+	trustExitCode = true
+[difftool "meld"]
+	cmd = meld "$LOCAL" "$REMOTE"
+
+# delta is the closest thing to Kaleidoscope that also works over SSH. It is
+# deliberately NOT wired up as core.pager here: this file is installed by
+# script/setup, which does not install packages, and a core.pager pointing at a
+# missing binary breaks every `git log` and `git diff` on the machine. Enable it
+# by hand once `git-delta` is in from the Archfile:
+#
+#   git config --global core.pager "delta"
+#   git config --global interactive.diffFilter "delta --color-only"
+#   git config --global delta.navigate true
+#   git config --global delta.line-numbers true
+#   git config --global delta.syntax-theme Dracula
+#   git config --global merge.conflictstyle zdiff3

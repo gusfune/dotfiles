@@ -31,17 +31,27 @@ into `$HOME` by `script/setup`. Modeled on
 | `zsh/dracula-highlight.zsh` | sourced from `zshrc.sh` via `~/.dotfiles/zsh/...`                                                                         |
 | `gitconfig`                 | `~/.gitconfig`                                                                                                            |
 | `gitconfig.local.macos`     | `~/.gitconfig.local` (macOS only)                                                                                         |
+| `gitconfig.local.linux`     | `~/.gitconfig.local` (Linux only)                                                                                         |
 | `gitignore`                 | `~/.gitignore`                                                                                                            |
 | `gitattributes`             | `~/.gitattributes`                                                                                                        |
 | `vscode-settings.json`      | `~/Library/Application Support/Code/User/settings.json`                                                                   |
 | `vscode-keybindings.json`   | `~/Library/Application Support/Code/User/keybindings.json`                                                                |
 | `zed-settings.json`         | `~/.config/zed/settings.json`                                                                                             |
 | `zed-keymap.json`           | `~/.config/zed/keymap.json`                                                                                               |
-| `ghostty/config`            | `~/.config/ghostty/config`                                                                                                |
+| `ghostty/config.macos`      | `~/.config/ghostty/config` (**macOS only** — Omarchy owns this file on Linux)                                              |
+| `zsh/omarchy.zsh`           | sourced from `zshrc.sh` via `~/.dotfiles/zsh/...` when `$OMARCHY_PATH` is set                                              |
+| `omarchy/hypr/*.lua`        | `~/.config/hypr/*.lua` (Linux only; 5 files — **not** `hyprland.lua`)                                                      |
+| `omarchy/shell.json`        | **NOT** symlinked — copy manually (both ways)                                                                             |
+| `omarchy/themes/*/`         | `~/.config/omarchy/themes/<name>` (dir symlink, Linux only)                                                                |
+| `Archfile`                  | not symlinked (run `./script/arch-bundle install`)                                                                        |
+| `script/arch-bundle`        | not symlinked (`brew bundle` for pacman + AUR)                                                                            |
+| `script/omarchy-bootstrap`  | not symlinked (packages + mise + Oh My Zsh + `chsh`)                                                                             |
 | `bin/claude`                | **NOT** symlinked — reached as `~/.dotfiles/bin` on `PATH` (see `zshenv.sh` + `zprofile.sh`); shadows the real Claude Code launcher |
 | `claude/claude-plus.md`     | **NOT** symlinked — a repo-internal symlink into `claude/sbx-kit/files/home/.claude/`; read by absolute path            |
 | `claude/settings.json`      | **NOT** symlinked — copy manually (both ways)                                                                             |
+| `claude/statusline.sh`      | `~/.claude/statusline.sh`; a repo-internal symlink into `claude/sbx-kit/files/home/.claude/`                              |
 | `claude/sbx-kit/`           | not symlinked — an sbx mixin kit, passed to `sbx run --kit` (see [Sandbox (sbx) Claude prefs](#sandbox-sbx-claude-prefs)) |
+| `mise/config.toml`          | **NOT** symlinked — copy manually (both ways)                                                                             |
 | `kimi-code/config.toml`     | `~/.kimi-code/config.toml`                                                                                                |
 | `kimi-code/tui.toml`        | `~/.kimi-code/tui.toml`                                                                                                   |
 | `kimi-code/statusline.sh`   | `~/.kimi-code/statusline.sh` (referenced by `tui.toml` `[status_line]`)                                                   |
@@ -132,8 +142,12 @@ time.
 The prepend is in **two** files on purpose. `zshenv.sh` runs for every shell,
 which is what gets the wrapper into VS Code terminals, tmux panes, subshells
 and scripts — none of those are login shells. `zprofile.sh` then prepends
-`~/.local/bin`, which holds the real binary and would win, so it re-prepends
-`~/.dotfiles/bin` straight after. Remove either line and `claude` silently
+`~/.local/bin`, which holds a competing `claude` and would win, so it
+re-prepends `~/.dotfiles/bin` straight after. On macOS that competitor is the
+real binary. On Omarchy it is a four-line Omarchy stub that runs `mise use -g
+claude` and then `mise x` — `bin/claude` skips past it deliberately, so it
+never pays for that config write, and so the stub can never bounce back
+through the wrapper. Remove either line and `claude` silently
 falls back to the stock prompt in some shells. Check all three:
 
 ```bash
@@ -174,6 +188,44 @@ Caveats worth knowing:
   cave. Plugin state also lives in the live `~/.claude/settings.json`, which
   is copied by hand, so flip it in both.
 
+### Adding new mise config
+
+`mise/config.toml` is the global tool list. It is **not** symlinked, and the
+reason is churn, not danger. Both halves of the usual worry were tested against
+mise 2026.8.11 with `MISE_GLOBAL_CONFIG_FILE` pointed at a throwaway copy: mise
+writes *through* a symlink (the link survives, the target takes the write) and
+it preserves the comment header when it rewrites the file.
+
+What it cannot survive is the noise. Each of the 13 Omarchy wrappers in
+`~/.local/bin` runs `mise use -g <tool>` on *every* launch, and
+`omarchy-install-dev-env` adds more, so a linked file would report every ad-hoc
+tool install as an uncommitted change in this repo. Copy by hand instead:
+
+```bash
+cp ~/Developer/dotfiles/mise/config.toml ~/.config/mise/config.toml  # repo -> home
+cp ~/.config/mise/config.toml ~/Developer/dotfiles/mise/config.toml  # home -> repo
+mise install                                                         # apply
+diff ~/.config/mise/config.toml ~/Developer/dotfiles/mise/config.toml  # drift check
+```
+
+`script/omarchy-bootstrap` seeds the file on a fresh box and then runs `mise
+install`. It seeds only when the path is empty, so a re-run never rolls a
+working machine back to the committed snapshot.
+
+Three things to know before you edit it:
+
+- `mise settings` is empty on purpose, so there is no `settings.toml` to carry.
+  `omarchy-install-dev-env` would create one (`mise settings add ruby.compile
+  false`); if you ever run it, decide whether that file joins the repo too.
+- `claude = "latest"` is load-bearing. `bin/claude` resolves the real binary
+  through `~/.local/share/mise/installs/claude/latest/` before it tries
+  anything else.
+- On macOS `.zshrc` falls back to nvm when mise is absent. Copying this file to
+  a Mac that has mise gives you two Node managers. Pick one first.
+
+The mise binary itself is pacman's (`try-omarchy-mise`, which `Conflicts With:
+mise`), so **never run `mise self-update`** — `omarchy update` owns that.
+
 ### Adding new Kimi Code config
 
 `kimi-code/config.toml` and `kimi-code/tui.toml` are symlinked, so edits flow
@@ -191,7 +243,17 @@ are symlinked, so that churn lands in the repo on its own.
 
 ### Ghostty config
 
-`ghostty/config` is symlinked to `~/.config/ghostty/config`. Edit the repo file.
+`ghostty/config.macos` is symlinked to `~/.config/ghostty/config` **on macOS
+only**. Edit the repo file.
+
+The `.macos` suffix follows the `gitconfig.local.macos` precedent, and it is
+load-bearing: on Omarchy that path belongs to the distro, which drives its
+colours from the active theme (`config-file = ?"~/.local/state/omarchy/current/theme/ghostty.conf"`)
+and carries the CSI-u keybinds TUIs need for Shift+Enter. Linking the repo's
+hardcoded palette over it breaks both. The same palette reaches Linux through
+`omarchy/themes/dracula-pro-van-helsing/` instead. A file plainly named
+`config` that is deliberately not linked on one OS looks like a bug and gets
+"fixed"; `config.macos` explains itself in `ls`.
 
 Ghostty 1.3.1 reads **four** candidate paths, not one:
 
@@ -213,7 +275,8 @@ lighter than the VS Code theme's — the oh-my-zsh prompt draws with `$fg_bold`,
 so those are the ones you actually see. Font and cursor mirror
 `terminal.integrated.*` in VS Code.
 
-Ghostty does not auto-reload. Hit `cmd+shift+,` or restart it. Verify a parse:
+Ghostty does not auto-reload. Hit `cmd+shift+,` (`ctrl+shift+,` on Linux) or
+restart it. Verify a parse:
 
 ```bash
 ghostty +show-config | grep -E "font-family|font-size|cursor-style|^background"
@@ -296,6 +359,217 @@ settings file itself. Validate after any edit:
 sbx kit validate ~/.dotfiles/claude/sbx-kit/
 ```
 
+### Omarchy (Arch + Hyprland)
+
+The repo installs on both macOS and Omarchy from one branch. `script/setup`
+detects the OS and routes accordingly; it only ever makes symlinks. The
+imperative half — packages, Oh My Zsh, `chsh` — is `script/omarchy-bootstrap`,
+deliberately separate so the installer never needs `sudo`.
+
+```bash
+./script/setup                       # symlinks, both OSes
+./script/omarchy-bootstrap           # Archfile packages + Oh My Zsh + theme
+./script/omarchy-bootstrap --chsh    # ...then switch the login shell to zsh
+```
+
+**Never `chsh` before `zsh -lic 'true'` is clean.** A broken `.zprofile` on a
+box you reach over SSH is not recoverable from a login prompt. The bootstrap
+script checks this for you; do not work around it. It also checks `/etc/shells` first, because
+`chsh` refuses any shell not listed there. On this box the entries appeared once
+the `zsh` package was installed — `/etc/shells` is owned by `filesystem`, and
+nothing in `pacman -Ql zsh` or `/usr/share/libalpm/hooks` explains it — so the
+script's `tee` step is a guarded no-op here. Keep it: the guard costs nothing and
+the failure it prevents is a login shell you cannot set.
+
+#### How zsh coexists with Omarchy's bash layer
+
+Omarchy ships its entire shell integration as bash (`$OMARCHY_PATH/default/bash/*`,
+sourced from `~/.bashrc`). Switching to zsh drops all of it, so:
+
+- `zshenv.sh` sources `/usr/share/omarchy/default/bash/env-bootstrap`. That is
+  what exports `OMARCHY_PATH` (70-odd `omarchy-*` commands read it) and appends
+  the mise shims to `PATH`. It has to be in `.zshenv`, not `.zprofile`: Arch
+  ships no `/etc/zsh`, so zsh never reads `/etc/profile`, and `.zshenv` is the
+  only file that runs for *every* zsh — `zsh -c 'omarchy-menu'` is not a login
+  shell. It must also run *before* `path_prepend "$HOME/.dotfiles/bin"`, because
+  it appends `~/.local/bin` and the claude wrapper has to stay in front.
+- `zsh/omarchy.zsh` re-implements the interactive parts worth keeping. Its
+  header lists what is deliberately not carried and why.
+- `~/.bashrc` is left alone on purpose. Four `omarchy-*` commands rewrite it,
+  the 70 `#!/bin/bash` omarchy scripts need it, and it is the recovery path when
+  zsh breaks.
+
+Two alias collisions worth knowing, both load-bearing:
+
+- oh-my-zsh's `git` plugin and Omarchy's bash aliases both define `gcm` — omz's
+  is `git checkout main`, Omarchy's is `git commit -m`. `zsh/omarchy.zsh` does
+  **not** port Omarchy's. Silently swapping them is how you commit to the wrong
+  branch.
+- omz's `z` plugin and zoxide both define `z`. `zshrc.sh` loads the plugin only
+  when zoxide is absent.
+
+`zshrc.sh` deliberately does **not** run `mise activate zsh`. Activate
+re-asserts `PATH` from a `precmd` hook on every prompt and prepends mise's
+*install* directories, one of which holds a real `claude` — so it would jump in
+front of `~/.dotfiles/bin` on the next `cd` and silently turn the Claude Plus
+prompt off. Re-hoisting once at startup does not survive a per-prompt hook.
+
+The shims `env-bootstrap` *appends* resolve every mise tool without activate,
+and appending is exactly what keeps the wrapper in front. The cost is
+per-directory version switching, which this global-only tool list does not
+need. The one hoist that is load-bearing is `path_prepend "$HOME/.dotfiles/bin"`
+in `zprofile.sh`, straight after `~/.local/bin`. Remove that line and `claude`
+falls back to the stock prompt in login shells.
+
+#### What you lose by moving to zsh
+
+Everything under `$OMARCHY_PATH/default/bash/fns/` — `tdl`/`hdl` (tmux + herdr
+dev layouts), `iso2sd`, `compress`/`decompress`, the `rsw`/`lsw`/`dsw` and
+`fip`/`dip`/`lip` families, the ssh auto-reconnect wrapper, and `worktrees`.
+They are root-owned bash, rewritten upstream every release; porting them buys a
+permanent breakage tax. `obash` (aliased in `zsh/omarchy.zsh`) is one keystroke
+to a bash shell that has them all.
+
+Also dropped: starship's prompt, which would fight the omz theme and the
+timestamp `PROMPT` overlay at the end of `zshrc.sh`.
+
+#### git config layering
+
+Git reads `~/.config/git/config` **before** `~/.gitconfig`, and later wins. So
+once `script/setup` links `~/.gitconfig`, this repo beats the file Omarchy
+seeds: `user.email` (noreply over `pm.me`) and `init.defaultBranch` (`main` over
+`master`) both come from the repo, while Omarchy's harmless extras
+(`diff.algorithm`, `column.ui`, `branch.sort`, `commit.verbose`) are inherited
+for free.
+
+**Leave `~/.config/git/config` alone.** `omarchy-reinstall-configs` rewrites it,
+so edits there are a fight you re-lose on every upgrade. The one thing worth
+overriding is its `gh` credential helper, which Omarchy pins to a *versioned*
+mise path that breaks the first time mise upgrades `gh` —
+`gitconfig.local.linux` resets the inherited list and re-adds a PATH-resolved
+one.
+
+### Desktop config
+
+See [`omarchy/README.md`](./omarchy/README.md) for the per-file reasoning. The
+short version: the five Lua files `~/.config/hypr/hyprland.lua` requires are
+symlinked, `hyprland.lua` itself is not, and `shell.json` is copied by hand.
+
+Three Omarchy mechanisms **replace** a path rather than write through it, which
+destroys a symlink and orphans the repo copy: update migrations (`mv "$tmp"
+"$config_file"`), the Omarchy shell's `atomicWrites` on every UI change, and
+`omarchy font set`'s `sed -i`. A fourth, `omarchy-refresh-config`, is `cp -f` —
+it writes *through* a symlink and overwrites the repo file instead.
+
+So: **don't run `omarchy refresh hyprland` or `omarchy refresh shell` casually**,
+and check `git status` afterwards if you do.
+
+#### Pulling desktop changes back into the repo
+
+Symlinked files need nothing — they are already the repo. Only `shell.json` drifts:
+
+```bash
+cp ~/.config/omarchy/shell.json omarchy/shell.json   # home -> repo
+git status --untracked-files=all
+```
+
+#### Drift check
+
+```bash
+# 1. Symlinks intact? A path under ~/.config means a migration or a `sed -i`
+#    replaced the link with a real file. Run this after every `omarchy update`.
+for f in bindings looknfeel input autostart monitors; do
+  printf '%-12s %s\n' "$f" "$(readlink -f ~/.config/hypr/$f.lua)"
+done
+
+# 2. The one copy-by-hand file
+diff ~/.config/omarchy/shell.json omarchy/shell.json && echo "shell.json in sync"
+
+# 3. Theme still ours, and still a symlink
+omarchy theme current
+readlink ~/.config/omarchy/themes/dracula-pro-van-helsing
+
+# 4. Did the terminal templates gain a key? This theme ships four colour files
+#    that bypass them, so an upstream addition would silently skip it.
+#
+#    Compare KEYS, never placeholders. The obvious version of this check greps
+#    `{{ key }}` on both sides — but the repo files are already substituted and
+#    hold no placeholders at all, so the right side is always empty and the
+#    check always "fails". It cannot detect what it was written to detect.
+#
+#    kitty separates key from value with a space and the others use `=`, so the
+#    key is the first identifier on the line; the section prefix keeps two
+#    same-named keys in different tables apart.
+themekeys() {
+  awk '/^[[:space:]]*($|#|;)/ { next }
+       /^[[:space:]]*\[/      { section = $0; next }
+       match($0, /[A-Za-z0-9_.-]+/) { print section "|" substr($0, RSTART, RLENGTH) }' \
+    "$1" | LC_ALL=C sort -u
+}
+for t in ghostty.conf alacritty.toml foot.ini kitty.conf; do
+  diff <(themekeys "$OMARCHY_PATH/default/themed/$t.tpl") \
+       <(themekeys "omarchy/themes/dracula-pro-van-helsing/$t") >/dev/null \
+    || echo "check $t against \$OMARCHY_PATH/default/themed/$t.tpl"
+done
+
+# 5. A theme edit does not reach the running session on its own.
+#    ~/.local/state/omarchy/current/theme is a rendered SNAPSHOT directory, not
+#    a symlink to the theme. Compare only the files the repo owns — the render
+#    also holds a dozen Omarchy generates from its own templates.
+for f in omarchy/themes/dracula-pro-van-helsing/*; do
+  [ -f "$f" ] || continue
+  diff -q "$f" ~/.local/state/omarchy/current/theme/"${f##*/}" >/dev/null 2>&1 \
+    || echo "stale render: ${f##*/} — omarchy theme set dracula-pro-van-helsing"
+done
+```
+
+### Refreshing the Archfile
+
+The Linux counterpart of the Brewfile. `script/arch-bundle` is its `brew bundle`.
+
+```bash
+./script/arch-bundle check     # drift, both directions
+./script/arch-bundle install   # pacman + yay, --needed
+./script/arch-bundle dump      # regenerate (wipes the inline comments)
+```
+
+Same traps as the Brewfile drift check, plus two of its own:
+
+- `pacman -Qqe` includes AUR packages. `-Qqen` (native) and `-Qqem` (foreign)
+  are what split them. Plain `-Qq` is 637 entries of dependency noise against
+  90 explicit ones.
+- `LC_ALL=C` on every `sort` *and* `comm` — `comm` needs both inputs in the
+  collation the `sort` produced.
+- Both obvious ways to feed pacman a package list break its confirmation
+  prompt, for different reasons. `pacman -S --needed -` reads its targets from
+  stdin and then has nothing left to read `Proceed with installation? [Y/n]`
+  from. Piping into `xargs` is worse and looks fine: GNU `xargs` runs its child
+  with **stdin on `/dev/null`**, so the prompt appears, accepts nothing, and
+  hangs forever. Verified with `readlink /proc/self/fd/0` in the child. Pass the
+  list as arguments from a bash array instead — that leaves stdin alone.
+- **`--needed` does not mean "only if missing".** It skips a package that is
+  already at the repo version, but it still *upgrades* one that is out of date.
+  Feeding it the whole Archfile on a system with pending updates is therefore a
+  partial upgrade, and it fails exactly like this:
+
+  ```
+  error: failed to prepare transaction (could not satisfy dependencies)
+  :: installing systemd (261.3-1) breaks dependency 'systemd=261.2'
+     required by systemd-sysvcompat
+  ```
+
+  `arch-bundle install` computes the missing set against `pacman -Qq` and
+  installs only that. Omarchy owns the base system — `omarchy update` upgrades
+  it, never this script. Run `omarchy update` first if `checkupdates` is
+  non-empty and pacman still complains about dependencies.
+- Packages Omarchy pins appear in `IgnorePkg` (`hyprland`, `linux-aarch64`,
+  `linux-aarch64-headers`) and prompt "Install anyway?" if you name them
+  directly. Installing only the missing set sidesteps that too.
+- Anything installed by a vendor script rather than pacman (Zed lives in
+  `~/.local/zed.app`; Homebrew; the mise-managed `bun`/`claude`/`codex`/`gh`/
+  `node`) never shows in a dump. Listing it means permanent phantom drift, so
+  those are named in the Archfile header as comments instead.
+
 ### Refreshing Brewfile
 
 ```bash
@@ -357,6 +631,8 @@ Before committing, scan for:
 | Per-machine auto-mode env | `claude/settings.json`                                     | strip `permissions`-adjacent `autoMode.environment` — it names real repos + worktree paths |
 | Machine IDs               | `gitconfig` (`[coderabbit] machineId`), VSCode `sync.gist` | omit; they regen per machine                                                               |
 | Per-project trust blocks  | `codex/config.toml`                                        | strip `[projects."/Users/gus/..."]`                                                        |
+| Codex hook trust hashes   | `codex/config.toml`                                        | strip `[hooks.state."<abs path>:<event>:0:0"]` — absolute paths + `trusted_hash` values     |
+| Orca agent hooks          | `claude/settings.json`                                      | strip the 12 `~/.orca/agent-hooks/` hook entries — Orca re-injects them on every launch     |
 | Personal email / noreply  | `gitconfig`                                                | noreply email is fine; real email up to you                                                |
 
 Quick scan:
@@ -389,3 +665,8 @@ grep -rEn "token|apiKey|apiToken|secret|/Users/gus|machineId" \
 - Don't commit `.DS_Store`, `tmp/`, `*.backup.*` — `.gitignore` covers these but double-check `git status` before commit.
 - Don't run `./script/setup` blindly on a machine where you've manually customized `~/.zshrc` etc. — the installer backs up real files to `<file>.backup.<ts>`, but you'll lose the active config until you merge by hand.
 - Don't add Claude/Codex hooks paths with absolute `/Users/gus/...` — use `~/` so the file works on any machine.
+- Don't symlink `~/.config/omarchy/shell.json` or `~/.config/hypr/hyprland.lua` — the shell's atomic writes and Omarchy's migrations both replace the path rather than write through it, which destroys the link and then silently reverts the change on the next `./script/setup`.
+- Don't link `ghostty/config.macos` on Linux. Omarchy owns `~/.config/ghostty/config`: it pulls colours from the active theme and carries the CSI-u keybinds TUIs need for Shift+Enter.
+- Don't `chsh` to zsh before `zsh -lic 'true'` runs clean — on an SSH-only box that is unrecoverable.
+- Don't run the Oh My Zsh installer without `KEEP_ZSHRC=yes CHSH=no RUNZSH=no`. It moves the symlinked `~/.zshrc` aside and writes its own template, silently undoing `script/setup`.
+- Don't commit `dracula-pro.zsh-theme`. It is a paid asset and this repo is public; `zshrc.sh` falls back to `robbyrussell` when it is absent.

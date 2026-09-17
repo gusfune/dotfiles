@@ -1,12 +1,15 @@
 # .zprofile — login shell (runs once per login).
 # PATH, exported env, one-time tool init. No interactive prompts/aliases.
 
-# Homebrew (sets PATH, MANPATH, HOMEBREW_*).
-if [ -x /opt/homebrew/bin/brew ]; then
-  eval "$(/opt/homebrew/bin/brew shellenv)"
-elif [ -x /usr/local/bin/brew ]; then
-  eval "$(/usr/local/bin/brew shellenv)"
-fi
+# Homebrew (sets PATH, MANPATH, HOMEBREW_*). Apple Silicon, Intel, Linuxbrew.
+for _brew in /opt/homebrew/bin/brew /usr/local/bin/brew \
+             /home/linuxbrew/.linuxbrew/bin/brew; do
+  if [ -x "$_brew" ]; then
+    eval "$("$_brew" shellenv)"
+    break
+  fi
+done
+unset _brew
 
 # rbenv.
 command -v rbenv >/dev/null && eval "$(rbenv init - --no-rehash zsh)"
@@ -22,6 +25,14 @@ export PATH
 # Atuin (shell history).
 [ -s "$HOME/.atuin/bin/env" ] && . "$HOME/.atuin/bin/env"
 
+# /etc/profile.d/locale.sh is what puts /etc/locale.conf into the environment,
+# and only sh/bash login shells read it. A zsh arriving over SSH lands in the C
+# locale, where printf emits \u escapes literally instead of the character.
+if [ -z "$LANG" ] && [ -r /etc/locale.conf ]; then
+  . /etc/locale.conf
+  export LANG="${LANG:-C.UTF-8}"
+fi
+
 # Homebrew / shell preferences.
 export HOMEBREW_DOWNLOAD_CONCURRENCY=auto
 export ZSH_DISABLE_COMPFIX=true
@@ -32,3 +43,8 @@ export CLAUDE_CODE_DISABLE_1M_CONTEXT=1
 export CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1
 export CLAUDE_CODE_DISABLE_AUTO_MEMORY=1
 export CLAUDE_CODE_SUBAGENT_MODEL=sonnet
+
+# Sentinel for .zshrc, which re-sources this file when a terminal skips the
+# login shell. HOMEBREW_PREFIX used to play this role and never latched on a
+# box without Homebrew, so .zprofile was re-sourced on every interactive shell.
+export DOTFILES_PROFILE_LOADED=1

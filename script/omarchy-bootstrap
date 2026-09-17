@@ -1,0 +1,112 @@
+#!/bin/bash
+# Bring an Omarchy (Arch Linux + Hyprland) box up to what this repo assumes:
+# the Archfile packages, the mise tools, Oh My Zsh, the custom theme, and zsh as
+# the login shell. script/setup only makes symlinks — this is the imperative
+# half, kept separate so the installer itself never needs sudo. Safe to re-run.
+#
+#   ./script/omarchy-bootstrap           # packages + mise + Oh My Zsh + theme
+#   ./script/omarchy-bootstrap --chsh    # ...and switch the login shell to zsh
+
+set -eo pipefail
+
+say()  { printf '\033[1m%s\033[0m\n' "$*"; }
+warn() { printf '\033[93m%s\033[0m\n' "$*" >&2; }
+die()  { printf '\033[91m%s\033[0m\n' "$*" >&2; exit 1; }
+
+DOTFILESDIR="$(cd "${0%/*}/.." && pwd -P)"
+
+command -v pacman >/dev/null || die "Not an Arch box — pacman not found."
+[[ -r /usr/share/omarchy/default/bash/env-bootstrap ]] || \
+  warn "This does not look like Omarchy; continuing anyway."
+
+say "==> Installing Archfile packages"
+"${DOTFILESDIR}/script/arch-bundle" install
+
+# mise tools. The config is copy-by-hand — every Omarchy wrapper in ~/.local/bin
+# runs `mise use -g <tool>` on launch, so the live file gains entries this repo
+# has not seen. Seed it only when there is nothing there to clobber; a re-run on
+# a working box must never roll the tool list back to the committed snapshot.
+if command -v mise >/dev/null; then
+  MISECONF="${HOME}/.config/mise/config.toml"
+  if [[ -f "${MISECONF}" ]]; then
+    say "==> mise config already present — leaving it alone"
+  else
+    say "==> Seeding the mise tool config"
+    install -Dm644 "${DOTFILESDIR}/mise/config.toml" "${MISECONF}"
+  fi
+
+  say "==> Installing mise tools"
+  mise install || warn "Some mise tools failed to install. Re-run: mise install"
+fi
+
+# Oh My Zsh. All three env vars are load-bearing:
+#   KEEP_ZSHRC=yes  or the installer moves our symlinked ~/.zshrc aside and
+#                   writes its own template, silently undoing script/setup
+#   CHSH=no         the login shell is switched below, after verification
+#   RUNZSH=no       don't drop into an interactive zsh mid-script
+if [[ -d "${HOME}/.oh-my-zsh" ]]; then
+  say "==> Oh My Zsh already installed"
+else
+  say "==> Installing Oh My Zsh"
+  RUNZSH=no CHSH=no KEEP_ZSHRC=yes sh -c \
+    "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+fi
+
+# dracula-pro is a paid theme, so it is deliberately not in this public repo.
+# .zshrc falls back to robbyrussell when it is missing, rather than letting omz
+# warn on every prompt.
+THEME="${HOME}/.oh-my-zsh/custom/themes/dracula-pro.zsh-theme"
+if [[ ! -r "${THEME}" ]]; then
+  warn "dracula-pro.zsh-theme is missing — .zshrc falls back to robbyrussell."
+  warn "  scp <mac>:~/.oh-my-zsh/custom/themes/dracula-pro.zsh-theme ${THEME}"
+fi
+
+# The Omarchy theme is symlinked into place by script/setup; this just applies
+# it. Idempotent — setting the current theme again is a no-op re-render.
+if command -v omarchy-theme-set >/dev/null; then
+  say "==> Applying the dracula-pro-van-helsing theme"
+  omarchy theme set dracula-pro-van-helsing || \
+    warn "Theme not applied. Run ./script/setup first so it is linked into place."
+fi
+
+if [[ "$1" == "--chsh" ]]; then
+  # Prove the login shell works BEFORE making it the login shell. A broken
+  # .zprofile on a box you reach over SSH is not fixable from a login prompt.
+  say "==> Verifying a clean zsh login shell"
+  command -v zsh >/dev/null || die "zsh is not installed."
+  zsh -lic 'true' || die "zsh login shell is not clean — fix that before chsh."
+
+  # chsh refuses any shell that is not listed in /etc/shells. The entries may
+  # already be there (they appeared with the zsh package on Omarchy), so this
+  # is usually a no-op — but an unset-able login shell is not a failure worth
+  # risking for one grep.
+  if ! grep -qxF "$(command -v zsh)" /etc/shells; then
+    say "==> Adding $(command -v zsh) to /etc/shells"
+    command -v zsh | sudo tee -a /etc/shells >/dev/null
+  fi
+
+  chsh -s "$(command -v zsh)"
+  say "Login shell is now zsh. LOG OUT AND BACK IN for it to take effect."
+fi
+
+# Report the end state last, and loudly. Without --chsh the login shell is
+# untouched by design, and a one-line "skipping" notice printed before this
+# scrolls away behind pacman's output — which reads as "the setup didn't work"
+# after the next reboot.
+say ""
+say "==> Done. Login shell is currently: $(getent passwd "$USER" | cut -d: -f7)"
+if [[ "$(getent passwd "$USER" | cut -d: -f7)" != *zsh ]]; then
+  warn ""
+  warn "  Still bash. This script does not change your login shell unless you"
+  warn "  ask it to, so that a broken zsh config cannot lock you out."
+  warn ""
+  warn "  Check it works, then switch:"
+  warn "      zsh -lic 'command -v claude'   # expect ~/.dotfiles/bin/claude"
+  warn "      ./script/omarchy-bootstrap --chsh"
+  warn ""
+elif [[ "${SHELL}" != *zsh ]]; then
+  warn ""
+  warn "  Login shell is zsh but this session still has SHELL=${SHELL}."
+  warn "  Log out and back in."
+  warn ""
+fi

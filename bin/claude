@@ -16,18 +16,54 @@ PROMPT="$HOME/.dotfiles/claude/claude-plus.md"
 
 # Never resolve "claude" through PATH here — that is this script, and it would
 # fork-bomb the machine rather than answer your question.
+#
+# The mise install path is checked FIRST, ahead of ~/.local/bin. On Omarchy
+# that path holds a four-line mise *stub* (`mise use -g claude; mise x claude
+# -- claude`) whose inner `claude` is resolved by mise rather than by the
+# shell. That is the only thing standing between the stub and an infinite loop
+# once this wrapper is on PATH — undocumented behaviour propping up a launcher
+# is not a foundation. Going straight to the binary sidesteps it, and skips the
+# `mise use -g` config *write* the stub performs on every single launch.
+SELF="$0"
+command -v readlink >/dev/null 2>&1 && \
+  SELF="$(readlink -f "$0" 2>/dev/null || echo "$0")"
+
 REAL=
-for candidate in "$HOME/.local/bin/claude" /opt/homebrew/bin/claude /usr/local/bin/claude; do
-  if [ -x "$candidate" ]; then
-    REAL="$candidate"
-    break
-  fi
+for candidate in \
+  "$HOME/.local/share/mise/installs/claude/latest/claude" \
+  "$HOME/.local/share/mise/installs/claude/latest/bin/claude" \
+  "$HOME/.local/bin/claude" \
+  /opt/homebrew/bin/claude \
+  /home/linuxbrew/.linuxbrew/bin/claude \
+  /usr/local/bin/claude \
+  /usr/bin/claude
+do
+  [ -x "$candidate" ] || continue
+  # Never pick ourselves, and never pick a shim that re-execs `claude` through
+  # PATH — both land straight back here.
+  [ "$candidate" -ef "$SELF" ] && continue
+  head -c 512 "$candidate" 2>/dev/null | grep -q 'mise x' && continue
+  REAL="$candidate"
+  break
 done
+
+# Last resort: ask mise where it actually put the binary.
+if [ -z "$REAL" ] && command -v mise >/dev/null 2>&1; then
+  REAL="$(mise which claude 2>/dev/null)"
+  [ -x "$REAL" ] || REAL=
+fi
 
 if [ -z "$REAL" ]; then
   echo "claude: real binary not found behind the Claude Plus wrapper" >&2
   exit 127
 fi
+
+# Belt and braces: if something did bounce back through us, the flag is already
+# in "$@". Passing it twice is a usage error, and re-entering is a fork bomb.
+if [ -n "$CLAUDE_PLUS_ACTIVE" ]; then
+  exec "$REAL" "$@"
+fi
+export CLAUDE_PLUS_ACTIVE=1
 
 # A missing or unreadable prompt file must not take Claude down with it.
 if [ ! -r "$PROMPT" ]; then

@@ -1,0 +1,35 @@
+# Global mise tool versions — the template for ~/.config/mise/config.toml.
+#
+# NOT symlinked, and not because it is unsafe: mise writes *through* a symlink
+# (the link survives, the target gets the write) and it preserves this comment
+# header across a rewrite. Both were tested against mise 2026.8.11 with
+# MISE_GLOBAL_CONFIG_FILE pointed at a throwaway copy.
+#
+# It is copy-by-hand because of the churn. The 13 Omarchy wrappers in
+# ~/.local/bin each run `mise use -g <tool>` on *every* launch, and
+# `omarchy-install-dev-env` adds more, so a linked file would turn every
+# ad-hoc tool install into an uncommitted diff in this repo.
+#
+#   cp mise/config.toml ~/.config/mise/config.toml   # repo -> home
+#   cp ~/.config/mise/config.toml mise/config.toml   # home -> repo
+#
+# `mise settings` is empty on purpose, so there is no settings.toml to carry.
+#
+# `claude` is load-bearing: bin/claude resolves the real binary through
+# ~/.local/share/mise/installs/claude/latest/ before it falls back to anything
+# else. Drop it here and the Claude Plus wrapper loses its first two candidates.
+#
+# On macOS .zshrc falls back to nvm when mise is absent. Copying this file to a
+# Mac that has mise therefore gives you two Node managers — pick one first.
+
+[tools]
+bun = "latest"
+claude = "latest"
+codex = "latest"
+gh = "latest"
+go = "latest"
+node = "latest"
+pnpm = "latest"
+prettier = "latest"
+python = "latest"
+uv = "latest"
