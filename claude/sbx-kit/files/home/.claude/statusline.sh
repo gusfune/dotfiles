@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# Claude Code status line. THE implementation — the host settings.json and the
-# sbx kit both point here, and claude/statusline.sh is a symlink to this file.
+# Claude Code status line for Docker sandboxes only. On the host, the
+# stage-line mod (claude/mods/stage-line) draws these rows under the prompt and
+# settings.json has no statusLine. The sbx kit does not carry plugins, so the
+# sandbox keeps this script. claude/statusline.sh is a symlink to this file.
+# Change a row here and in claude/mods/stage-line/hooks/status.ts together.
 #
 # It lives inside the kit rather than at claude/statusline.sh because `sbx kit
 # validate` rejects a symlink that escapes the kit directory, so the real bytes
