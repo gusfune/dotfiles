@@ -271,14 +271,29 @@
     "command": "~/.claude/statusline.sh"
   },
   "enabledPlugins": {
-    "commit-commands@claude-plugins-official": true,
+    "bullshit-detector@serhii-korniienko": true,
+    "caveman@caveman": false,
     "code-simplifier@claude-plugins-official": true,
     "coderabbit@claude-plugins-official": true,
     "codex@openai-codex": true,
-    "caveman@caveman": false,
+    "commit-commands@claude-plugins-official": true,
+    "impeccable@impeccable": true,
+    "planning-with-files@planning-with-files": true,
     "warp@claude-code-warp": true
   },
   "extraKnownMarketplaces": {
+    "caveman": {
+      "source": {
+        "source": "github",
+        "repo": "JuliusBrussee/caveman"
+      }
+    },
+    "claude-code-warp": {
+      "source": {
+        "source": "github",
+        "repo": "warpdotdev/claude-code-warp"
+      }
+    },
     "impeccable": {
       "source": {
         "source": "github",
@@ -291,16 +306,16 @@
         "repo": "openai/codex-plugin-cc"
       }
     },
-    "caveman": {
+    "planning-with-files": {
       "source": {
         "source": "github",
-        "repo": "JuliusBrussee/caveman"
+        "repo": "OthmanAdi/planning-with-files"
       }
     },
-    "claude-code-warp": {
+    "serhii-korniienko": {
       "source": {
         "source": "github",
-        "repo": "warpdotdev/claude-code-warp"
+        "repo": "SerhiiKorniienko/bullshit-detector"
       }
     }
   },

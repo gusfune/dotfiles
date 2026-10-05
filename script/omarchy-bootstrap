@@ -32,7 +32,7 @@ if command -v mise >/dev/null; then
     say "==> mise config already present — leaving it alone"
   else
     say "==> Seeding the mise tool config"
-    install -Dm644 "${DOTFILESDIR}/mise/config.toml" "${MISECONF}"
+    install -Dm644 "${DOTFILESDIR}/mise/global.toml" "${MISECONF}"
   fi
 
   say "==> Installing mise tools"

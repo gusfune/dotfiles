@@ -233,14 +233,6 @@
     "**/storybook-static/**"
   ],
   "typescript.updateImportsOnFileMove.enabled": "always",
-  "vs-kubernetes": {
-    "vscode-kubernetes.helm-path.linux": "/home/gus/.vs-kubernetes/tools/helm/linux-amd64/helm",
-    "vscode-kubernetes.helm-path.mac": "/Users/gus/.vs-kubernetes/tools/helm/darwin-amd64/helm",
-    "vscode-kubernetes.kubectl-path.linux": "/home/gus/.vs-kubernetes/tools/kubectl/kubectl",
-    "vscode-kubernetes.kubectl-path.mac": "/Users/gus/.vs-kubernetes/tools/kubectl/kubectl",
-    "vscode-kubernetes.minikube-path.linux": "/home/gus/.vs-kubernetes/tools/minikube/linux-amd64/minikube",
-    "vscode-kubernetes.minikube-path.mac": "/Users/gus/.vs-kubernetes/tools/minikube/darwin-amd64/minikube"
-  },
   "vsicons.dontShowNewVersionMessage": true,
   "vsintellicode.modify.editor.suggestSelection": "automaticallyOverrodeDefaultValue",
   "webview.experimental.useExternalEndpoint": true,
