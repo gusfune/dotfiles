@@ -49,7 +49,8 @@ into `$HOME` by `script/setup`. Modeled on
 | `bin/claude`                | **NOT** symlinked — reached as `~/.dotfiles/bin` on `PATH` (see `zshenv.sh` + `zprofile.sh`); shadows the real Claude Code launcher |
 | `claude/claude-plus.md`     | **NOT** symlinked — a repo-internal symlink into `claude/sbx-kit/files/home/.claude/`; read by absolute path            |
 | `claude/settings.json`      | **NOT** symlinked — copy manually (both ways)                                                                             |
-| `claude/statusline.sh`      | `~/.claude/statusline.sh`; a repo-internal symlink into `claude/sbx-kit/files/home/.claude/`                              |
+| `claude/statusline.sh`      | `~/.claude/statusline.sh`; a repo-internal symlink into `claude/sbx-kit/files/home/.claude/`. Sandbox only — the host uses the mod below |
+| `claude/mods/stage-line/`   | **NOT** symlinked — loaded by `bin/claude` with `--plugin-dir` (see [Stage-line mod](#stage-line-mod))                    |
 | `claude/sbx-kit/`           | not symlinked — an sbx mixin kit, passed to `sbx run --kit` (see [Sandbox (sbx) Claude prefs](#sandbox-sbx-claude-prefs)) |
 | `mise/global.toml`          | **NOT** symlinked — copy manually (both ways); one file for both machines via `os` filters                                |
 | `kimi-code/config.toml`     | `~/.kimi-code/config.toml`                                                                                                |
@@ -113,9 +114,10 @@ land here, and a blind `cp` brings all of them:
   `baerskin/agents-config` is a **private** repo, so naming it here publishes
   it. Checked with `gh repo view <repo> --json visibility`. Do that check before
   carrying any new marketplace.
-- **The inline `statusLine`.** The repo's one-liner is
-  `~/.claude/statusline.sh`; the live file may still hold the ~3 KB inline
-  version it replaced. The repo is ahead here, not behind.
+- **`statusLine`.** The repo file has none: the stage-line mod draws the
+  status rows on the host. The live file may still hold the old command or
+  the ~3 KB inline version before it. Delete it from the live file, or the old
+  status line draws as well as the mod.
 
 `enabledPlugins` and `extraKnownMarketplaces` are sorted by key in the repo
 copy. Claude writes them in insertion order, so sorting is what keeps the next
@@ -206,6 +208,34 @@ Caveats worth knowing:
   already does the compression the plugin was there for. Two cavemen, one
   cave. Plugin state also lives in the live `~/.claude/settings.json`, which
   is copied by hand, so flip it in both.
+
+### Stage-line mod
+
+`claude/mods/stage-line/` is a Claude Code mod. It draws the old status line
+rows under the prompt in three rows. The third row starts with the workflow
+stage: `PLAN`, `BUILD`, `USER_REVIEW`, `CODE_REVIEW`, `STAND_BY`. Its
+[README](./claude/mods/stage-line/README.md) has the stage rules.
+
+A mod has no render site inside a command `statusLine`, so the mod replaces
+the status line instead of feeding it. One process then holds the stage and
+the rows, and no file bridge is necessary. `claude/settings.json` has no
+`statusLine` for this reason. The live file needs the same deletion by hand.
+
+`bin/claude` loads the mod with `--plugin-dir`, the same per-invocation route
+as the prompt, and skips the flag when the folder is missing. Claude Code
+writes generated types to `.claude-plugin/types/` on load; that folder ignores
+itself. After an edit, run all three:
+
+```bash
+cd ~/Developer/dotfiles/claude/mods/stage-line
+claude plugin validate .
+claude plugin test .
+npx -y -p typescript@5.9.3 tsc -p tsconfig.json   # needs the generated types
+```
+
+The sandbox does not get the mod. The sbx kit carries no plugins, so it keeps
+`statusline.sh`. Change a status row in `hooks/status.ts` and in
+`statusline.sh` together.
 
 ### Adding new mise config
 
@@ -378,7 +408,7 @@ carries them. `claude/sbx-kit/` is that kit (modelled on
 | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `spec.yaml`                         | mixin, `requires.agent: claude`; the `install` step jq-merges the prefs into `~/.claude/settings.json` as root and `chmod +x` the status line |
 | `files/home/.claude/sbx-prefs.json` | the subset of `claude/settings.json` to carry: `statusLine`, `model`, `effortLevel`, thinking flags, `theme`, `tui`, `env`                    |
-| `files/home/.claude/statusline.sh`  | the host statusLine one-liner as a script, with epoch formatting that works on GNU, uutils and BSD `date`                                     |
+| `files/home/.claude/statusline.sh`  | the status line script for the sandbox, with epoch formatting that works on GNU, uutils and BSD `date`. The host uses the stage-line mod  |
 | `files/home/.claude/claude-plus.md` | the Claude Plus system prompt. This is the **canonical copy**; `claude/claude-plus.md` is a symlink to it. Shipped, but only applied when the launcher passes `--system-prompt-file` |
 
 Launch with the `sbxme` function from `zshrc.sh`. It names both the repo kit
