@@ -1,7 +1,7 @@
 /** The status rows as the terminal draws them under the kept prompt hint. */
 import { expect, test } from "claude-code/testing"
 import type { Engine } from "claude-code/testing"
-import { formatClock, formatReset, statusRows } from "../hooks/status"
+import { formatReset, parseGitStatus, statusRows } from "../hooks/status"
 import type { StatusInput } from "../hooks/status"
 import { boot } from "./harness"
 
@@ -30,9 +30,14 @@ const step = async (
   }
 }
 
-test("three rows under the hint; main effort only; totals include subagents", async ($, on) => {
+test("two rows under the hint; git counts; main effort only", async ($, on) => {
   const world = boot(on)
-  let usage = { input_tokens: 0, output_tokens: 0 }
+  world.gitLines = [
+    "# branch.upstream origin/feat/x",
+    "# branch.ab +2 -0",
+    "1 .M N... 100644 100644 100644 a b hooks/x.ts",
+    "? notes.txt",
+  ]
   on("turn.step", async function* (_$, e) {
     return {
       turnId: e.turnId,
@@ -41,7 +46,8 @@ test("three rows under the hint; main effort only; totals include subagents", as
       toolUses: [],
       stopReason: "end_turn",
       usage: {
-        ...usage,
+        input_tokens: 0,
+        output_tokens: 0,
         cache_read_input_tokens: 0,
         cache_creation_input_tokens: 0,
         model: "m",
@@ -58,9 +64,7 @@ test("three rows under the hint; main effort only; totals include subagents", as
     isInteractive: true,
   })
 
-  usage = { input_tokens: 3_000, output_tokens: 1_000 }
   await step($, { effort: "high" })
-  usage = { input_tokens: 2_500, output_tokens: 1_500 }
   await step($, { effort: "low", agentId: "sub-1" })
 
   const ui = await $.ui.mount(HINT)
@@ -68,19 +72,18 @@ test("three rows under the hint; main effort only; totals include subagents", as
   expect(
     await ui.find({
       key: "row-0",
-      text: /📂 repo 🌿 \(feat\/x\) 🤖 \[Opus 5\.5\] \{high\} 📊 \[ctx: 42K\]/,
+      text: "📂 repo 🌿 (feat/x ±2 ↑2) 🤖 [Opus 5.5] {high} 📊 [ctx: 42K 21%]",
     })
   ).toBeDefined()
   expect(
     await ui.find({
       key: "row-1",
-      text: /in: 5K 📤 out: 2K ⏳ \[5h: 12% \d\d\/\d\d \d\d:\d\d\] 📅 \[7d: 40%\]/,
+      text: new RegExp(
+        `^◆ PLAN ⏳ \\[5h: 12% \\d\\d/\\d\\d \\d\\d:\\d\\d\\] 📅 \\[7d: 40%\\] 🔑 ${world.sessionId}$`
+      ),
     })
   ).toBeDefined()
-  expect(
-    await ui.find({ key: "row-2", text: `◆ PLAN 🔑 ${world.sessionId}` })
-  ).toBeDefined()
-  expect(await ui.find({ key: "row-3" })).toBeUndefined()
+  expect(await ui.find({ key: "row-2" })).toBeUndefined()
   await ui.unmount()
 })
 
@@ -105,27 +108,52 @@ test("the stage row shows the PR number", async ($, on) => {
   })
   const ui = await $.ui.mount(HINT)
   expect(
-    await ui.find({ key: "row-2", text: /^◆ CODE_REVIEW #12 🔑 / })
+    await ui.find({ key: "row-1", text: /^◆ CODE_REVIEW #12 ⏳ / })
   ).toBeDefined()
   await ui.unmount()
 })
 
-test("clock and reset formats match statusline.sh", () => {
-  expect(formatClock(new Date(2026, 9, 5, 19, 7, 3))).toBe("05/10/26  7:07:03")
-  expect(formatClock(new Date(2026, 9, 5, 0, 30, 0))).toBe("05/10/26 12:30:00")
+test("reset format matches statusline.sh", () => {
   expect(formatReset("2026-10-05T21:30:00")).toBe("05/10 21:30")
   expect(formatReset("garbage")).toBeNull()
 })
 
+test("git status: clean, dirty, ahead/behind, no upstream, detached", () => {
+  const head = "# branch.oid abc\n# branch.head main\n"
+  expect(parseGitStatus(head)).toEqual({
+    branch: "main",
+    dirty: 0,
+    ahead: 0,
+    behind: 0,
+  })
+  expect(
+    parseGitStatus(
+      `${head}# branch.upstream origin/main\n# branch.ab +3 -1\n1 M. N... 1 1 1 a b f\n2 R. N... 1 1 1 a b R100 g\tf\nu UU N... 1 1 1 1 a b c h\n? new\n`
+    )
+  ).toEqual({ branch: "main", dirty: 4, ahead: 3, behind: 1 })
+  expect(parseGitStatus(`${head}? only-untracked\n`).dirty).toBe(1)
+  expect(
+    parseGitStatus("# branch.oid abc\n# branch.head (detached)\n").branch
+  ).toBe("HEAD")
+})
+
+test("the branch shows only non-zero git counts", () => {
+  const row = (git: StatusInput["git"]) =>
+    text(statusRows({ ...BASE, cwd: "/w/x", branch: "main", git })[0])
+  expect(row(null)).toContain("🌿 (main) ")
+  expect(row({ dirty: 0, ahead: 0, behind: 0 })).toContain("🌿 (main) ")
+  expect(row({ dirty: 0, ahead: 0, behind: 4 })).toContain("🌿 (main ↓4) ")
+  expect(row({ dirty: 3, ahead: 1, behind: 0 })).toContain("🌿 (main ±3 ↑1) ")
+})
+
 const BASE: StatusInput = {
-  now: new Date(2026, 9, 5, 21, 58, 34),
   cwd: "/w/dev-11389-price-card-upsells-on-the-server-and-c",
   branch: "dev-11389-price-card-upsells-on-the-server-and-check-free-order",
+  git: null,
   model: "claude-opus-5-5",
   effort: null,
   contextTokens: 163_000,
-  tokensIn: 0,
-  tokensOut: 0,
+  contextPercent: 81.5,
   rateLimits: [],
   sessionId: "sid",
   title: null,
@@ -139,7 +167,7 @@ const text = (row: { text: string }[] = []): string =>
 test("a worktree folder that repeats the branch is dropped; long names clip", () => {
   const [identity] = statusRows(BASE)
   expect(text(identity)).toBe(
-    "🕐 [05/10/26  9:58:34] 🌿 (dev-11389-price-card-upsells-on-the-ser…) 🤖 [Opus 5.5] 📊 [ctx: 163K]"
+    "🌿 (dev-11389-price-card-upsells-on-the-ser…) 🤖 [Opus 5.5] 📊 [ctx: 163K 82%]"
   )
   const [other] = statusRows({ ...BASE, cwd: "/w/dotfiles", branch: "main" })
   expect(text(other)).toContain("📂 dotfiles 🌿 (main)")

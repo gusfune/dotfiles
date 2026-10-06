@@ -17,15 +17,25 @@ interface RateLimit {
   resetsAt?: string
 }
 
+/** Uncommitted files, and commits ahead and behind the upstream (0 without one). */
+interface GitCounts {
+  dirty: number
+  ahead: number
+  behind: number
+}
+
+interface GitStatus extends GitCounts {
+  branch: string
+}
+
 interface StatusInput {
-  now: Date
   cwd: string
   branch: string
+  git: GitCounts | null
   model: string
   effort: string | null
   contextTokens: number | null
-  tokensIn: number
-  tokensOut: number
+  contextPercent: number | null
   rateLimits: readonly RateLimit[]
   sessionId: string
   title: string | null
@@ -46,10 +56,39 @@ const pad = (n: number): string => String(n).padStart(2, "0")
 
 const thousands = (n: number): string => `${Math.floor(n / 1000)}K`
 
-/** `date '+%d/%m/%y %l:%M:%S'`: a space-padded 12-hour clock, no meridiem. */
-const formatClock = (d: Date): string => {
-  const hour = String(d.getHours() % 12 || 12).padStart(2, " ")
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${pad(d.getFullYear() % 100)} ${hour}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+/**
+ * Reads `git status --porcelain=v2 --branch`. A detached HEAD reads as
+ * `HEAD`, as `git rev-parse --abbrev-ref HEAD` printed it. Every entry line
+ * (changed, renamed, unmerged, untracked) counts as one dirty file.
+ */
+const parseGitStatus = (stdout: string): GitStatus => {
+  const status: GitStatus = { branch: "", dirty: 0, ahead: 0, behind: 0 }
+  for (const line of stdout.split("\n")) {
+    if (line.startsWith("# branch.head ")) {
+      const head = line.slice("# branch.head ".length).trim()
+      status.branch = head === "(detached)" ? "HEAD" : head
+    } else if (line.startsWith("# branch.ab ")) {
+      const match = /\+(\d+) -(\d+)/.exec(line)
+      status.ahead = Number(match?.[1] ?? 0)
+      status.behind = Number(match?.[2] ?? 0)
+    } else if (/^[12u?] /.test(line)) {
+      status.dirty += 1
+    }
+  }
+  return status
+}
+
+/** ` ±3 ↑2 ↓1`, each part only when non-zero. */
+const gitSuffix = (git: GitCounts | null): string => {
+  if (!git) {
+    return ""
+  }
+  const parts = [
+    git.dirty > 0 ? `±${git.dirty}` : "",
+    git.ahead > 0 ? `↑${git.ahead}` : "",
+    git.behind > 0 ? `↓${git.behind}` : "",
+  ].filter(Boolean)
+  return parts.length > 0 ? ` ${parts.join(" ")}` : ""
 }
 
 /**
@@ -111,35 +150,39 @@ const rateSegment = (
 }
 
 /**
- * The three rows: identity, usage, and stage with the session. The stage leads
- * its row, so a narrow terminal cuts the session id first.
+ * The two rows: the work (folder, branch, model, context), then the stage
+ * with limits and the session. The stage leads its row, so a narrow terminal
+ * cuts the session id and title first.
  */
 const statusRows = (s: StatusInput): Segment[][] => {
   const dir = basename(s.cwd)
   const identity: Segment[] = [
-    plain("🕐 "),
-    bold(`[${formatClock(s.now)}]`, "yellowBright"),
     ...(isDirInBranch(dir, s.branch)
       ? []
-      : [plain(" 📂 "), bold(clip(dir, 24), "magentaBright")]),
+      : [plain("📂 "), bold(clip(dir, 24), "magentaBright"), plain(" ")]),
     ...(s.branch
-      ? [plain(" 🌿 "), bold(`(${clip(s.branch, 40)})`, "cyanBright")]
+      ? [
+          plain("🌿 "),
+          bold(`(${clip(s.branch, 40)}${gitSuffix(s.git)})`, "cyanBright"),
+          plain(" "),
+        ]
       : []),
-    plain(" 🤖 "),
+    plain("🤖 "),
     bold(`[${shortModel(s.model)}]`, "greenBright"),
     ...(s.effort ? [plain(" "), bold(`{${s.effort}}`, "gray")] : []),
     ...(s.contextTokens !== null
       ? [
           plain(" 📊 "),
-          bold(`[ctx: ${thousands(s.contextTokens)}]`, "blueBright"),
+          bold(
+            `[ctx: ${thousands(s.contextTokens)}${s.contextPercent !== null ? ` ${Math.round(s.contextPercent)}%` : ""}]`,
+            "blueBright"
+          ),
         ]
       : []),
   ]
-  const usage: Segment[] = [
-    plain("📥 "),
-    bold(`in: ${thousands(s.tokensIn)}`, "yellowBright"),
-    plain(" 📤 "),
-    bold(`out: ${thousands(s.tokensOut)}`, "cyanBright"),
+  const stage: Segment[] = [
+    bold(`◆ ${s.stage}`, STAGE_COLOR[s.stage]),
+    ...(s.pr !== null ? [plain(" "), bold(`#${s.pr}`, "gray")] : []),
     ...rateSegment(s.rateLimits, {
       kind: "five_hour",
       label: "5h",
@@ -152,16 +195,12 @@ const statusRows = (s: StatusInput): Segment[][] => {
       icon: "📅",
       color: "magentaBright",
     }),
-  ]
-  const stage: Segment[] = [
-    bold(`◆ ${s.stage}`, STAGE_COLOR[s.stage]),
-    ...(s.pr !== null ? [plain(" "), bold(`#${s.pr}`, "gray")] : []),
     plain(" 🔑 "),
     bold(s.sessionId, "yellowBright"),
     ...(s.title ? [plain(" 🏷 "), bold(clip(s.title, 40), "cyanBright")] : []),
   ]
-  return [identity, usage, stage]
+  return [identity, stage]
 }
 
-export type { Segment, StatusInput, RateLimit }
-export { statusRows, formatClock, formatReset }
+export type { GitCounts, GitStatus, Segment, StatusInput, RateLimit }
+export { statusRows, formatReset, parseGitStatus }

@@ -17,17 +17,17 @@ import {
   STAGES,
 } from "./stage"
 import type { PrOrigin, Signal, Workflow } from "./stage"
-import { statusRows } from "./status"
+import { parseGitStatus, statusRows } from "./status"
+import type { GitStatus } from "./status"
 
 const WORKFLOW = { plugin: "stage-line", key: "workflow" } as const
 const EFFORT = { plugin: "stage-line", key: "effort" } as const
-const TOKENS = { plugin: "stage-line", key: "tokens" } as const
+const GIT = { plugin: "stage-line", key: "git" } as const
 const TITLE = { plugin: "stage-line", key: "title" } as const
 
 const PR_FIELDS = "number,state,headRefOid,statusCheckRollup,reviews"
 const POLL_MS = 60_000
 const BRANCH_MS = 10_000
-const CLOCK_MS = 1_000
 
 const FILE_TOOLS = new Set(["Edit", "Write", "NotebookEdit"])
 
@@ -40,8 +40,6 @@ interface Transition {
 }
 
 const workflowKey = (sessionId: string): string => `workflow:${sessionId}`
-
-const tokensKey = (sessionId: string): string => `tokens:${sessionId}`
 
 /**
  * Runs a process and maps a failed launch (binary missing, timeout) to a
@@ -58,9 +56,10 @@ const run = async ($: EngineInterface, argv: readonly string[]) => {
     }))
 }
 
-const gitBranch = async ($: EngineInterface): Promise<string> => {
-  const result = await run($, ["git", "rev-parse", "--abbrev-ref", "HEAD"])
-  return result.exitCode === 0 ? result.stdout.trim() : ""
+/** Branch and counts in one call; null outside a repo or on failure. */
+const gitStatus = async ($: EngineInterface): Promise<GitStatus | null> => {
+  const result = await run($, ["git", "status", "--porcelain=v2", "--branch"])
+  return result.exitCode === 0 ? parseGitStatus(result.stdout) : null
 }
 
 /** Applies one signal atomically, then mirrors the record to the store for /resume. */
@@ -100,8 +99,30 @@ const checkPr = async ($: EngineInterface, origin: PrOrigin): Promise<void> => {
   await apply($, { kind: "pr", origin, view, capture, now })
 }
 
+/**
+ * The branch goes to the workflow record (the stale-PR guard reads it); the
+ * counts go to their own key, so a new file never bumps the workflow revision.
+ */
+const setGitCounts = async (
+  $: EngineInterface,
+  status: GitStatus | null
+): Promise<void> => {
+  await update($, GIT, (g) => {
+    const counts = status
+      ? { dirty: status.dirty, ahead: status.ahead, behind: status.behind }
+      : null
+    const isSame =
+      g?.counts?.dirty === counts?.dirty &&
+      g?.counts?.ahead === counts?.ahead &&
+      g?.counts?.behind === counts?.behind
+    return g && isSame ? g : { counts }
+  })
+}
+
 const refreshBranch = async ($: EngineInterface): Promise<void> => {
-  const branch = await gitBranch($)
+  const status = await gitStatus($)
+  const branch = status?.branch ?? ""
+  await setGitCounts($, status)
   await update($, WORKFLOW, (w) =>
     w && w.branch !== branch
       ? { ...w, branch }
@@ -144,42 +165,28 @@ const adopt = async (
   sessionId: string,
   source: "start" | "clear" | "resume" | "fork"
 ): Promise<void> => {
-  const branch = await gitBranch($)
+  const status = await gitStatus($)
+  await setGitCounts($, status)
+  const branch = status?.branch ?? ""
   const isClear = source === "clear"
   const storedWorkflow = isClear
     ? undefined
     : await $.store.get(workflowKey(sessionId))
-  const storedTokens = isClear
-    ? undefined
-    : await $.store.get(tokensKey(sessionId))
   const loaded = restore(storedWorkflow, sessionId, branch)
   await update($, WORKFLOW, (w) =>
     source === "start" && w?.sessionId === sessionId ? w : loaded
   )
-  await update($, TOKENS, (t) => {
-    if (t?.sessionId === sessionId) {
-      return t
-    }
-    const saved = storedTokens as
-      | { tokensIn?: unknown; tokensOut?: unknown }
-      | undefined
-    return {
-      sessionId,
-      tokensIn: typeof saved?.tokensIn === "number" ? saved.tokensIn : 0,
-      tokensOut: typeof saved?.tokensOut === "number" ? saved.tokensOut : 0,
-    }
-  })
 }
 
-/** Starts the redraw clock, the branch refresh and the PR poll once per environment. */
+/**
+ * Starts the git refresh and the PR poll once per environment. No redraw
+ * clock: a write to state the render read draws the rows again.
+ */
 const startTimers = ($: EngineInterface): void => {
   if (isTicking) {
     return
   }
   isTicking = true
-  $.clock.every(CLOCK_MS, () => {
-    $.ui.invalidate("ui.render")
-  })
   // refreshBranch and checkPr never reject: run() maps a failed launch to an exit code.
   $.clock.every(BRANCH_MS, () => {
     void refreshBranch($)
@@ -310,22 +317,6 @@ const register: Register = (on) => {
         await $.state.set(EFFORT, effort)
       }
     }
-    const usage = result.usage
-    if (usage) {
-      const sessionId = await $.session.id()
-      const totals = await update($, TOKENS, (t) => {
-        const base =
-          t?.sessionId === sessionId
-            ? t
-            : { sessionId, tokensIn: 0, tokensOut: 0 }
-        return {
-          sessionId,
-          tokensIn: base.tokensIn + usage.input_tokens,
-          tokensOut: base.tokensOut + usage.output_tokens,
-        }
-      })
-      await $.store.set(tokensKey(sessionId), totals)
-    }
     return result
   })
 
@@ -377,29 +368,29 @@ const register: Register = (on) => {
   on("ui.render", { component: "PromptHint" }, async ($, e, next) => {
     const kept = await next(e)
     const { Box, Text } = $.ui.resolve(e)
-    const [w, effort, tokens, title] = await Promise.all([
+    const [w, effort, git, title] = await Promise.all([
       read($, WORKFLOW),
       read($, EFFORT),
-      read($, TOKENS),
+      read($, GIT),
       read($, TITLE),
     ])
-    const [cwd, model, sessionId, usage, now] = await Promise.all([
+    const [cwd, model, sessionId, usage] = await Promise.all([
       $.session.cwd(),
       $.session.model(),
       $.session.id(),
       $.session.usage(),
-      $.clock.now(),
     ])
-    const isOwnTokens = tokens?.sessionId === sessionId
+    const { tokens, window, percent } = usage.context
     const rows = statusRows({
-      now: new Date(now),
       cwd,
       branch: w?.branch ?? "",
+      git: git?.counts ?? null,
       model,
       effort: effort ?? null,
-      contextTokens: usage.context.tokens ?? null,
-      tokensIn: isOwnTokens ? tokens.tokensIn : 0,
-      tokensOut: isOwnTokens ? tokens.tokensOut : 0,
+      contextTokens: tokens ?? null,
+      contextPercent:
+        percent ??
+        (tokens !== undefined && window > 0 ? (tokens / window) * 100 : null),
       rateLimits: usage.rateLimits,
       sessionId,
       title: title ?? null,

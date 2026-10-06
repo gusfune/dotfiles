@@ -19,8 +19,8 @@ declare module "claude-code" {
       }
       /** The main agent's last reasoning effort. */
       effort: string
-      /** Token totals for one session, subagents included. */
-      tokens: { sessionId: string; tokensIn: number; tokensOut: number }
+      /** Uncommitted files and commits ahead/behind; null outside a repo. */
+      git: { counts: { dirty: number; ahead: number; behind: number } | null }
       /** The session title the classic hooks report. */
       title: string
     }

@@ -16,6 +16,8 @@ interface Run {
 interface World {
   sessionId: string
   branch: string
+  /** Porcelain v2 lines after `# branch.head`: upstream, ab, entries. */
+  gitLines: string[]
   gh: Run
   /** While set, `gh` waits on it: lets a test act during a pending check. */
   ghGate: Promise<void> | null
@@ -71,6 +73,7 @@ const boot = (on: On): World => {
   const world: World = {
     sessionId: "sid-1",
     branch: "feat/x",
+    gitLines: [],
     gh: NO_PR,
     ghGate: null,
     ghCalls: 0,
@@ -111,7 +114,12 @@ const boot = (on: On): World => {
         value: {
           ...base,
           exitCode: 0,
-          stdout: `${world.branch}\n`,
+          stdout: [
+            "# branch.oid abc123",
+            `# branch.head ${world.branch}`,
+            ...world.gitLines,
+            "",
+          ].join("\n"),
           stderr: "",
         },
       }
