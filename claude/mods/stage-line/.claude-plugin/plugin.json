@@ -1,0 +1,7 @@
+{
+  "name": "stage-line",
+  "version": "0.1.0",
+  "description": "Status line under the prompt, with the workflow stage: PLAN, BUILD, USER_REVIEW, CODE_REVIEW, STAND_BY",
+  "author": { "name": "Gus Fune" },
+  "types": "./types/index.d.ts"
+}
