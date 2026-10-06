@@ -1,7 +1,7 @@
 /** The status rows as the terminal draws them under the kept prompt hint. */
 import { expect, test } from "claude-code/testing"
 import type { Engine } from "claude-code/testing"
-import { formatReset, parseGitStatus, statusRows } from "../hooks/status"
+import { formatReset, meter, parseGitStatus, statusRows } from "../hooks/status"
 import type { StatusInput } from "../hooks/status"
 import { boot } from "./harness"
 
@@ -30,7 +30,7 @@ const step = async (
   }
 }
 
-test("two rows under the hint; git counts; main effort only", async ($, on) => {
+test("three rows under the hint; git counts; main effort only", async ($, on) => {
   const world = boot(on)
   world.gitLines = [
     "# branch.upstream origin/feat/x",
@@ -72,18 +72,21 @@ test("two rows under the hint; git counts; main effort only", async ($, on) => {
   expect(
     await ui.find({
       key: "row-0",
-      text: "📂 repo 🌿 (feat/x ±2 ↑2) 🤖 [Opus 5.5] {high} 📊 [ctx: 42K 21%]",
+      text: "📂 repo 🌿 (feat/x ±2 ↑2) 🤖 [Opus 5.5] {high} 📊 [ctx: 42K] [██········ 21%]",
     })
   ).toBeDefined()
   expect(
     await ui.find({
       key: "row-1",
       text: new RegExp(
-        `^◆ PLAN ⏳ \\[5h: 12% \\d\\d/\\d\\d \\d\\d:\\d\\d\\] 📅 \\[7d: 40%\\] 🔑 ${world.sessionId}$`
+        "^⏳ \\[5h: \\d\\d/\\d\\d \\d\\d:\\d\\d\\] \\[█········· 12%\\] 📅 \\[7d\\] \\[████······ 40%\\]$"
       ),
     })
   ).toBeDefined()
-  expect(await ui.find({ key: "row-2" })).toBeUndefined()
+  expect(
+    await ui.find({ key: "row-2", text: `◆ PLAN 🔑 ${world.sessionId}` })
+  ).toBeDefined()
+  expect(await ui.find({ key: "row-3" })).toBeUndefined()
   await ui.unmount()
 })
 
@@ -108,9 +111,28 @@ test("the stage row shows the PR number", async ($, on) => {
   })
   const ui = await $.ui.mount(HINT)
   expect(
-    await ui.find({ key: "row-1", text: /^◆ CODE_REVIEW #12 ⏳ / })
+    await ui.find({ key: "row-2", text: /^◆ CODE_REVIEW #12 🔑 / })
   ).toBeDefined()
   await ui.unmount()
+})
+
+test("the meter fills a cell per 10% and colours by load", () => {
+  expect(meter(0)).toEqual({
+    text: "[·········· 0%]",
+    color: "greenBright",
+    isBold: true,
+  })
+  expect(meter(57).text).toBe("[██████···· 57%]")
+  expect(meter(57).color).toBe("yellowBright")
+  expect(meter(80).color).toBe("redBright")
+  expect(meter(140).text).toBe("[██████████ 140%]")
+  expect(meter(-5).text).toBe("[·········· -5%]")
+})
+
+test("no known rate limit: the limits row is left out", () => {
+  const rows = statusRows(BASE)
+  expect(rows).toHaveLength(2)
+  expect(text(rows[1])).toBe("◆ PLAN 🔑 sid")
 })
 
 test("reset format matches statusline.sh", () => {
@@ -167,7 +189,7 @@ const text = (row: { text: string }[] = []): string =>
 test("a worktree folder that repeats the branch is dropped; long names clip", () => {
   const [identity] = statusRows(BASE)
   expect(text(identity)).toBe(
-    "🌿 (dev-11389-price-card-upsells-on-the-ser…) 🤖 [Opus 5.5] 📊 [ctx: 163K 82%]"
+    "🌿 (dev-11389-price-card-upsells-on-the-ser…) 🤖 [Opus 5.5] 📊 [ctx: 163K] [████████·· 82%]"
   )
   const [other] = statusRows({ ...BASE, cwd: "/w/dotfiles", branch: "main" })
   expect(text(other)).toContain("📂 dotfiles 🌿 (main)")

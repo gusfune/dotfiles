@@ -136,6 +136,23 @@ const shortModel = (id: string): string => {
 const isDirInBranch = (dir: string, branch: string): boolean =>
   branch !== "" && branch.replaceAll("/", "-").startsWith(dir)
 
+const METER_CELLS = 10
+
+/**
+ * A 10-cell bar with the percent at its right end, `[███████··· 68%]`,
+ * coloured by load: green under 50%, yellow under 80%, red from 80%. A cell fills at each 10%, rounded.
+ */
+const meter = (percent: number): Segment => {
+  const clamped = Math.min(100, Math.max(0, percent))
+  const filled = Math.round(clamped / METER_CELLS)
+  const color =
+    clamped >= 80 ? "redBright" : clamped >= 50 ? "yellowBright" : "greenBright"
+  return bold(
+    `[${"█".repeat(filled)}${"·".repeat(METER_CELLS - filled)} ${Math.round(percent)}%]`,
+    color
+  )
+}
+
 const rateSegment = (
   limits: readonly RateLimit[],
   spec: { kind: string; label: string; icon: string; color: string }
@@ -145,14 +162,19 @@ const rateSegment = (
     return []
   }
   const reset = limit.resetsAt ? formatReset(limit.resetsAt) : null
-  const body = `${Math.round(limit.percentUsed)}%${reset ? ` ${reset}` : ""}`
-  return [plain(` ${spec.icon} `), bold(`[${spec.label}: ${body}]`, spec.color)]
+  const body = reset ? `: ${reset}` : ""
+  return [
+    plain(`${spec.icon} `),
+    bold(`[${spec.label}${body}]`, spec.color),
+    plain(" "),
+    meter(limit.percentUsed),
+  ]
 }
 
 /**
- * The two rows: the work (folder, branch, model, context), then the stage
- * with limits and the session. The stage leads its row, so a narrow terminal
- * cuts the session id and title first.
+ * The rows: the work (folder, branch, model, context), the rate limits (absent
+ * when none are known), then the stage with the session. The stage leads its
+ * row, so a narrow terminal cuts the session id and title first.
  */
 const statusRows = (s: StatusInput): Segment[][] => {
   const dir = basename(s.cwd)
@@ -173,34 +195,39 @@ const statusRows = (s: StatusInput): Segment[][] => {
     ...(s.contextTokens !== null
       ? [
           plain(" 📊 "),
-          bold(
-            `[ctx: ${thousands(s.contextTokens)}${s.contextPercent !== null ? ` ${Math.round(s.contextPercent)}%` : ""}]`,
-            "blueBright"
-          ),
+          bold(`[ctx: ${thousands(s.contextTokens)}]`, "blueBright"),
+          ...(s.contextPercent !== null
+            ? [plain(" "), meter(s.contextPercent)]
+            : []),
         ]
       : []),
   ]
-  const stage: Segment[] = [
-    bold(`◆ ${s.stage}`, STAGE_COLOR[s.stage]),
-    ...(s.pr !== null ? [plain(" "), bold(`#${s.pr}`, "gray")] : []),
-    ...rateSegment(s.rateLimits, {
+  const limitParts = [
+    rateSegment(s.rateLimits, {
       kind: "five_hour",
       label: "5h",
       icon: "⏳",
       color: "greenBright",
     }),
-    ...rateSegment(s.rateLimits, {
+    rateSegment(s.rateLimits, {
       kind: "seven_day",
       label: "7d",
       icon: "📅",
       color: "magentaBright",
     }),
+  ].filter((part) => part.length > 0)
+  const limits: Segment[] = limitParts.flatMap((part, i) =>
+    i === 0 ? part : [plain(" "), ...part]
+  )
+  const stage: Segment[] = [
+    bold(`◆ ${s.stage}`, STAGE_COLOR[s.stage]),
+    ...(s.pr !== null ? [plain(" "), bold(`#${s.pr}`, "gray")] : []),
     plain(" 🔑 "),
     bold(s.sessionId, "yellowBright"),
     ...(s.title ? [plain(" 🏷 "), bold(clip(s.title, 40), "cyanBright")] : []),
   ]
-  return [identity, stage]
+  return limits.length > 0 ? [identity, limits, stage] : [identity, stage]
 }
 
 export type { GitCounts, GitStatus, Segment, StatusInput, RateLimit }
-export { statusRows, formatReset, parseGitStatus }
+export { statusRows, formatReset, meter, parseGitStatus }
