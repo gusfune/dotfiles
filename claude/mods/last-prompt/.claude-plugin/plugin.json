@@ -1,0 +1,7 @@
+{
+  "name": "last-prompt",
+  "version": "0.1.0",
+  "description": "Pins your last prompt, cut to three rows, in the band above the prompt input",
+  "author": { "name": "Gus Fune" },
+  "types": "./types/index.d.ts"
+}
