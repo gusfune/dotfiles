@@ -212,7 +212,7 @@ Caveats worth knowing:
 ### Stage-line mod
 
 `claude/mods/stage-line/` is a Claude Code mod. It draws the old status line
-rows under the prompt in two rows. The second row starts with the workflow
+rows under the prompt in three rows. The third row starts with the workflow
 stage: `PLAN`, `BUILD`, `USER_REVIEW`, `CODE_REVIEW`, `STAND_BY`. Its
 [README](./claude/mods/stage-line/README.md) has the stage rules.
 

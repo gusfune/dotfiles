@@ -1,15 +1,20 @@
 # stage-line
 
-A Claude Code mod that draws two status rows under the prompt. The second row
+A Claude Code mod that draws three status rows under the prompt. The third row
 starts with the workflow stage:
 
 ```
-📂 dotfiles 🌿 (feat/x ±3 ↑2) 🤖 [Opus 5.5] {high} 📊 [ctx: 163K 82%]
-◆ CODE_REVIEW #12 ⏳ [5h: 14% 05/10 20:10] 📅 [7d: 7% 11/10 23:00] 🔑 0335d342-36f4-4f85-95ec-6b17587ec444 🏷 fix login
+📂 dotfiles 🌿 (feat/x ±3 ↑2) 🤖 [Opus 5.5] {high} 📊 [ctx: 113K] [██████···· 57%]
+⏳ [5h: 05/10 20:10] [█········· 14%] 📅 [7d: 11/10 23:00] [████████·· 83%]
+◆ CODE_REVIEW #12 🔑 0335d342-36f4-4f85-95ec-6b17587ec444 🏷 fix login
 ```
 
 Row 1 has the folder, the branch, the model, the effort and the context. Row 2
-has the stage, the PR number, the rate limits, the session id and the title.
+has the rate limits; it is left out when Claude Code reports none. Row 3 has
+the stage, the PR number, the session id and the title.
+
+Each bar has 10 cells and fills one cell per 10%, rounded. The percent sits at
+its right end. It is green under 50%, yellow under 80%, and red from 80%.
 
 After the branch, `±N` counts uncommitted files (untracked included), and
 `↑N` and `↓N` count commits ahead of and behind the upstream. Each count shows
