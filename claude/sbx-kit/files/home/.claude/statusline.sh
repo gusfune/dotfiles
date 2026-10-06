@@ -14,9 +14,11 @@
 # 2>/dev/null and the rate-limit reset times silently vanished on Linux.
 # fmt_epoch below handles GNU, uutils and BSD. Receives session JSON on stdin.
 #
-#   line 1:  🕐 [timestamp] 📂 dir 🌿 (branch) 🤖 [model] {effort} 📊 [ctx: NK]
-#   line 2:  📥 in: NK 📤 out: NK ⏳ [5h: N% reset] 📅 [7d: N% reset]
-#   line 3:  🔑 session_id 🏷 session_name
+#   line 1:  📂 dir 🌿 (branch ±dirty ↑ahead ↓behind) 🤖 [model] {effort} 📊 [ctx: NK N%]
+#   line 2:  ⏳ [5h: N% reset] 📅 [7d: N% reset] 🔑 session_id 🏷 session_name
+#
+# The mod's line 2 starts with the workflow stage. The sandbox has no stage
+# source, so its line 2 starts with the rate limits.
 
 input=$(cat)
 
@@ -27,8 +29,18 @@ fmt_epoch() {
 }
 
 cwd=$(echo "$input" | jq -r '.workspace.current_dir')
-branch=$(cd "$cwd" 2>/dev/null && git -c gc.auto=0 rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')
-timestamp=$(date '+%d/%m/%y %l:%M:%S')
+# One git call for branch, dirty count and ahead/behind, as the mod does.
+# A detached HEAD reads as HEAD, as rev-parse --abbrev-ref printed it.
+git_status=$(cd "$cwd" 2>/dev/null && git -c gc.auto=0 status --porcelain=v2 --branch 2>/dev/null)
+branch=$(printf '%s\n' "$git_status" | sed -n 's/^# branch.head //p')
+[ "$branch" = '(detached)' ] && branch='HEAD'
+dirty=$(printf '%s\n' "$git_status" | grep -c '^[12u?] ')
+ahead=$(printf '%s\n' "$git_status" | sed -n 's/^# branch.ab +\([0-9]*\) -.*/\1/p')
+behind=$(printf '%s\n' "$git_status" | sed -n 's/^# branch.ab +[0-9]* -\([0-9]*\)/\1/p')
+git_counts=''
+[ "${dirty:-0}" -gt 0 ] && git_counts="$git_counts ±$dirty"
+[ "${ahead:-0}" -gt 0 ] && git_counts="$git_counts ↑$ahead"
+[ "${behind:-0}" -gt 0 ] && git_counts="$git_counts ↓$behind"
 model=$(echo "$input" | jq -r '.model.display_name')
 effort=$(echo "$input" | jq -r '.effort.level // empty')
 
@@ -36,14 +48,11 @@ cu=$(echo "$input" | jq -r '.context_window.current_usage // empty')
 if [ -n "$cu" ] && [ "$cu" != 'null' ]; then
   ctx_tokens=$(echo "$input" | jq -r '[.context_window.current_usage.input_tokens, .context_window.current_usage.cache_creation_input_tokens, .context_window.current_usage.cache_read_input_tokens] | map(. // 0) | add')
   ctx_k=$(echo "scale=0; $ctx_tokens / 1000" | bc)
+  ctx_pct=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
+  [ -n "$ctx_pct" ] && ctx_k="${ctx_k}K $(printf '%.0f' "$ctx_pct")%" || ctx_k="${ctx_k}K"
 else
   ctx_k=''
 fi
-
-ti=$(echo "$input" | jq -r '.context_window.total_input_tokens // 0')
-to=$(echo "$input" | jq -r '.context_window.total_output_tokens // 0')
-ti_k=$(echo "scale=0; $ti / 1000" | bc)
-to_k=$(echo "scale=0; $to / 1000" | bc)
 
 r5=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
 r7=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
@@ -66,22 +75,18 @@ if [ -n "$r7" ]; then
   fi
 fi
 
-printf '\xf0\x9f\x95\x90 \033[93m\033[1m[%s]\033[0m \xf0\x9f\x93\x82 \033[95m\033[1m%s\033[0m' "$timestamp" "$(basename "$cwd")"
-[ -n "$branch" ] && printf ' \xf0\x9f\x8c\xbf \033[96m\033[1m(%s)\033[0m' "$branch"
+printf '\xf0\x9f\x93\x82 \033[95m\033[1m%s\033[0m' "$(basename "$cwd")"
+[ -n "$branch" ] && printf ' \xf0\x9f\x8c\xbf \033[96m\033[1m(%s%s)\033[0m' "$branch" "$git_counts"
 printf ' \xf0\x9f\xa4\x96 \033[92m\033[1m[%s]\033[0m' "$model"
 [ -n "$effort" ] && printf ' \033[90m\033[1m{%s}\033[0m' "$effort"
-[ -n "$ctx_k" ] && printf ' \xf0\x9f\x93\x8a \033[94m\033[1m[ctx: %sK]\033[0m' "$ctx_k"
-printf '\n'
-
-printf '\xf0\x9f\x93\xa5 \033[93m\033[1min: %sK\033[0m \xf0\x9f\x93\xa4 \033[96m\033[1mout: %sK\033[0m' "$ti_k" "$to_k"
-[ -n "$r5_str" ] && printf ' \xe2\x8f\xb3 \033[92m\033[1m[5h: %s]\033[0m' "$r5_str"
-[ -n "$r7_str" ] && printf ' \xf0\x9f\x93\x85 \033[95m\033[1m[7d: %s]\033[0m' "$r7_str"
+[ -n "$ctx_k" ] && printf ' \xf0\x9f\x93\x8a \033[94m\033[1m[ctx: %s]\033[0m' "$ctx_k"
 
 sid=$(echo "$input" | jq -r '.session_id // empty')
 sname=$(echo "$input" | jq -r '.session_name // empty')
-if [ -n "$sid" ]; then
-  printf '\n'
-  printf '\xf0\x9f\x94\x91 \033[93m\033[1m%s\033[0m' "$sid"
-  [ -n "$sname" ] && printf ' \xf0\x9f\x8f\xb7 \033[96m\033[1m%s\033[0m' "$sname"
-fi
+row2=''
+[ -n "$r5_str" ] && row2="$row2 $(printf '\xe2\x8f\xb3 \033[92m\033[1m[5h: %s]\033[0m' "$r5_str")"
+[ -n "$r7_str" ] && row2="$row2 $(printf '\xf0\x9f\x93\x85 \033[95m\033[1m[7d: %s]\033[0m' "$r7_str")"
+[ -n "$sid" ] && row2="$row2 $(printf '\xf0\x9f\x94\x91 \033[93m\033[1m%s\033[0m' "$sid")"
+[ -n "$sid" ] && [ -n "$sname" ] && row2="$row2 $(printf '\xf0\x9f\x8f\xb7 \033[96m\033[1m%s\033[0m' "$sname")"
+[ -n "$row2" ] && printf '\n%s' "${row2# }"
 true
