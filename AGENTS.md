@@ -55,7 +55,11 @@ into `$HOME` by `script/setup`. Modeled on
 | `kimi-code/config.toml`     | `~/.kimi-code/config.toml`                                                                                                |
 | `kimi-code/tui.toml`        | `~/.kimi-code/tui.toml`                                                                                                   |
 | `kimi-code/statusline.sh`   | `~/.kimi-code/statusline.sh` (referenced by `tui.toml` `[status_line]`)                                                   |
-| `AGENTS-GLOBAL.md`          | both `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`                                                                       |
+| `AGENTS-GLOBAL.md`          | `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` and `~/.pi/agent/AGENTS.md`                                                         |
+| `pi/settings.json`          | **NOT** symlinked — copy manually (both ways); repo copy strips `deviceId` / `lastChangelogVersion`                             |
+| `pi/mcp.json`               | **NOT** symlinked — `pi mcp add` rewrites it; copy manually                                                                    |
+| `pi/extensions/*.ts`        | `~/.pi/agent/extensions/<name>` (per-file links)                                                                                |
+| `pi/prompts/*.md`           | `~/.pi/agent/prompts/<name>` (per-file links)                                                                                   |
 | `codex/config.toml`         | **NOT** symlinked — copy manually (template)                                                                              |
 | `script/sbx-bootstrap`      | not symlinked (run from repo or `~/.dotfiles/script/`)                                                                    |
 | `Brewfile`                  | not symlinked (run `brew bundle` against repo path)                                                                       |
@@ -206,6 +210,43 @@ Caveats worth knowing:
   already does the compression the plugin was there for. Two cavemen, one
   cave. Plugin state also lives in the live `~/.claude/settings.json`, which
   is copied by hand, so flip it in both.
+
+### Pi (pi-coding-agent) config
+
+`pi/` mirrors the Claude Code setup onto the pi harness
+(`~/.pi/agent/`, docs live in the install under
+`~/.pi/agent/install/releases/<v>/node_modules/@earendil-works/pi-coding-agent/docs/`):
+
+- `pi/extensions/peon-ping.ts` replaces the entire `hooks` block from
+  `claude/settings.json`. It pipes `{"hook_event_name": ...}` to
+  `~/.claude/hooks/peon-ping/peon.sh` on pi lifecycle events
+  (`session_start`→SessionStart, `before_agent_start`→UserPromptSubmit,
+  `agent_end`→Stop, bash errors→PostToolUseFailure,
+  `session_before_compact`→PreCompact, `session_shutdown`→SessionEnd).
+  Claude-only events (Subagent*, Notification, PermissionRequest) have no pi
+  equivalent and are dropped; the `/peon-ping-use` sound-pack interceptors
+  are not ported.
+- `pi/extensions/claude-plus.ts` is the `--system-prompt-file` wrapper's
+  equivalent: pi has no persistent prompt setting, so it returns the
+  contents of `claude/claude-plus.md` (via `~/.dotfiles`) as a full
+  `before_agent_start` system-prompt replacement. `CLAUDE_PLUS_FILE`
+  overrides the path; a missing file silently keeps pi's stock prompt.
+- `pi/settings.json` carries `defaultThinkingLevel: "xhigh"` (=`effortLevel`
+  + `alwaysThinkingEnabled`) and `theme: "dark"`. `tui: fullscreen` and
+  auto-compact are pi defaults, so they are not listed.
+- `pi/prompts/` ports the commit-commands plugin (`/commit`,
+  `/commit-push-pr`, `/clean_gone`). Claude's `` !`cmd` `` inline shell has
+  no pi counterpart; the templates tell the agent to run the git commands
+  itself.
+- The Superset notify hooks are already covered by the locally-installed
+  `~/.pi/agent/extensions/superset-hooks.ts` (not in this repo).
+- There is no permissions allowlist to port: pi never prompts for tool
+  approval, so the Claude `permissions.allow` list is moot.
+
+Both JSON files are copy-by-hand for the same class of reason as
+`claude/settings.json` (per-machine state, tool-driven rewrites). After
+copying `pi/settings.json` home, pi regenerates `deviceId` itself.
+Validate extension edits by loading pi once: `pi -p --no-tools "say ok"`.
 
 ### Adding new mise config
 
