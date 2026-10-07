@@ -53,7 +53,7 @@ for DOTFILE in *; do
 
   # Dirs and files we never auto-link at the root level.
   case "${DOTFILE}" in
-    bin/|script/|claude/|codex/|ghostty/|kimi-code/|mise/|omarchy/|zsh/|.git/|*.md|*.txt|LICENSE|Archfile|Brewfile|vscode-extensions.txt)
+    bin/|script/|claude/|codex/|ghostty/|kimi-code/|mise/|omarchy/|pi/|zsh/|.git/|*.md|*.txt|LICENSE|Archfile|Brewfile|vscode-extensions.txt)
       continue
       ;;
   esac
@@ -103,10 +103,11 @@ if ! [[ "${HOMEDOTFILES}" -ef "${DOTFILESDIR}" ]]; then
   ln -sf "${DOTFILESDIR}" "${HOMEDOTFILES}"
 fi
 
-# Shared AGENTS doc: Claude and Codex both read the same instructions.
+# Shared AGENTS doc: Claude, Codex and pi all read the same instructions.
 AGENTS_GLOBAL="${DOTFILESDIR}/AGENTS-GLOBAL.md"
-link_if_needed "${HOME}/.claude/CLAUDE.md" "${AGENTS_GLOBAL}"
-link_if_needed "${HOME}/.codex/AGENTS.md"  "${AGENTS_GLOBAL}"
+link_if_needed "${HOME}/.claude/CLAUDE.md"    "${AGENTS_GLOBAL}"
+link_if_needed "${HOME}/.codex/AGENTS.md"     "${AGENTS_GLOBAL}"
+link_if_needed "${HOME}/.pi/agent/AGENTS.md"  "${AGENTS_GLOBAL}"
 
 # Claude settings are intentionally NOT symlinked: Claude rewrites the live
 # file with per-machine state (autoMode.environment names real repos + paths)
@@ -118,6 +119,24 @@ link_if_needed "${HOME}/.codex/AGENTS.md"  "${AGENTS_GLOBAL}"
 link_if_needed "${HOME}/.kimi-code/config.toml"   "${DOTFILESDIR}/kimi-code/config.toml"
 link_if_needed "${HOME}/.kimi-code/tui.toml"      "${DOTFILESDIR}/kimi-code/tui.toml"
 link_if_needed "${HOME}/.kimi-code/statusline.sh" "${DOTFILESDIR}/kimi-code/statusline.sh"
+
+# Pi (pi-coding-agent) extensions and prompt templates. Linked per file, never
+# per directory: ~/.pi/agent/extensions also holds locally-installed extensions
+# (superset-hooks, orca-*) that a dir link would hide.
+for PIEXT in "${DOTFILESDIR}"/pi/extensions/*.ts; do
+  [[ -e "${PIEXT}" ]] || continue
+  link_if_needed "${HOME}/.pi/agent/extensions/$(basename "${PIEXT}")" "${PIEXT}"
+done
+for PIPROMPT in "${DOTFILESDIR}"/pi/prompts/*.md; do
+  [[ -e "${PIPROMPT}" ]] || continue
+  link_if_needed "${HOME}/.pi/agent/prompts/$(basename "${PIPROMPT}")" "${PIPROMPT}"
+done
+
+# pi/settings.json and pi/mcp.json are intentionally NOT symlinked: pi writes
+# per-machine state into settings.json (deviceId, lastChangelogVersion, model
+# churn) and `pi mcp add` rewrites mcp.json. Copy manually, both ways:
+#   cp pi/settings.json ~/.pi/agent/settings.json   # repo -> home
+#   cp pi/mcp.json      ~/.pi/agent/mcp.json
 
 # Ghostty, macOS only. Only the XDG path is linked: Ghostty 1.3.1 also reads
 # ~/Library/Application Support/com.mitchellh.ghostty/config.ghostty, and two
