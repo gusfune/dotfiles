@@ -51,6 +51,7 @@ into `$HOME` by `script/setup`. Modeled on
 | `claude/settings.json`      | **NOT** symlinked — copy manually (both ways)                                                                             |
 | `claude/statusline.sh`      | `~/.claude/statusline.sh`; a repo-internal symlink into `claude/sbx-kit/files/home/.claude/`. Sandbox only — the host uses the mod below |
 | `claude/mods/stage-line/`   | **NOT** symlinked — loaded by `bin/claude` with `--plugin-dir` (see [Stage-line mod](#stage-line-mod))                    |
+| `claude/mods/last-prompt/`  | **NOT** symlinked — loaded by `bin/claude` with `--plugin-dir` (see [Last-prompt mod](#last-prompt-mod))                  |
 | `claude/sbx-kit/`           | not symlinked — an sbx mixin kit, passed to `sbx run --kit` (see [Sandbox (sbx) Claude prefs](#sandbox-sbx-claude-prefs)) |
 | `mise/global.toml`          | **NOT** symlinked — copy manually (both ways); one file for both machines via `os` filters                                |
 | `kimi-code/config.toml`     | `~/.kimi-code/config.toml`                                                                                                |
@@ -221,8 +222,9 @@ the status line instead of feeding it. One process then holds the stage and
 the rows, and no file bridge is necessary. `claude/settings.json` has no
 `statusLine` for this reason. The live file needs the same deletion by hand.
 
-`bin/claude` loads the mod with `--plugin-dir`, the same per-invocation route
-as the prompt, and skips the flag when the folder is missing. Claude Code
+`bin/claude` loads every folder in `claude/mods/` that has a
+`.claude-plugin/plugin.json`, one `--plugin-dir` each, the same per-invocation
+route as the prompt. A new mod needs no wrapper edit. Claude Code
 writes generated types to `.claude-plugin/types/` on load; that folder ignores
 itself. After an edit, run all three:
 
@@ -236,6 +238,14 @@ npx -y -p typescript@5.9.3 tsc -p tsconfig.json   # needs the generated types
 The sandbox does not get the mod. The sbx kit carries no plugins, so it keeps
 `statusline.sh`. Change a status row in `hooks/status.ts` and in
 `statusline.sh` together.
+
+### Last-prompt mod
+
+`claude/mods/last-prompt/` pins your last prompt, cut to three rows, in the
+band above the prompt input, in a bordered panel titled `LAST WORDS`. The mod
+API has no site at the top of the window, so that band is the closest place
+that stays on screen. Its [README](./claude/mods/last-prompt/README.md) has
+the rules and the checks.
 
 ### Adding new mise config
 
