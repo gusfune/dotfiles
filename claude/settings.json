@@ -266,10 +266,6 @@
     ]
   },
   "enableArtifact": false,
-  "statusLine": {
-    "type": "command",
-    "command": "~/.claude/statusline.sh"
-  },
   "enabledPlugins": {
     "bullshit-detector@serhii-korniienko": true,
     "caveman@caveman": false,
