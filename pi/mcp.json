@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "linear": {
+      "type": "http",
+      "url": "https://mcp.linear.app/mcp"
+    },
+    "Fencer": {
+      "type": "http",
+      "url": "https://app.fencer.dev/mcp/"
+    }
+  }
+}
