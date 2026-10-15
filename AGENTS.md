@@ -20,6 +20,11 @@ into `$HOME` by `script/setup`. Modeled on
 - Run `./script/setup` to refresh symlinks (idempotent; backs up real files).
 - Never edit through the symlink target if you're unsure — go to the repo file.
 - `~/.dotfiles` is a symlink pointing at this directory; scripts use it.
+- The live config is whatever branch is checked out. Every symlink, the
+  `claude` wrapper and the mods it loads read from this working tree, so a
+  `git switch` changes the running setup too. A feature branch cut from `main`
+  drops anything still on an unmerged branch. Use `git worktree add` for side
+  work you do not want live.
 
 ## File → install-target map
 
@@ -123,6 +128,20 @@ land here, and a blind `cp` brings all of them:
   status rows on the host. The live file may still hold the old command or
   the ~3 KB inline version before it. Delete it from the live file, or the old
   status line draws as well as the mod.
+
+**Orca writes its own `statusLine`** when the live file has none. Its command
+only relays data to the Orca app and prints nothing, so the status line goes
+blank. Verified in Orca's `managed-agent-hook-controls` chunk: it skips the
+write when the command is not its own, or when the marker
+`~/.orca/agent-hooks/claude-statusline.installed` exists. It treats any command
+that contains `agent-hooks/claude-statusline.sh` as its own, so it can
+overwrite or delete that command. Never name that script in `statusLine`.
+Orca deletes the marker when it retires its line or removes its hooks. Lock
+the marker once per machine, so an empty slot stays empty:
+
+```bash
+chflags uchg ~/.orca/agent-hooks/claude-statusline.installed   # undo: chflags nouchg
+```
 
 `enabledPlugins` and `extraKnownMarketplaces` are sorted by key in the repo
 copy. Claude writes them in insertion order, so sorting is what keeps the next
