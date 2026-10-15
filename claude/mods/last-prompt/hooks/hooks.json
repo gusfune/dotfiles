@@ -1,0 +1,4 @@
+{
+  "description": "The last-prompt hooks module",
+  "modules": ["./register.ts"]
+}

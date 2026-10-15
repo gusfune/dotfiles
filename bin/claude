@@ -65,14 +65,16 @@ if [ -n "$CLAUDE_PLUS_ACTIVE" ]; then
 fi
 export CLAUDE_PLUS_ACTIVE=1
 
-# The stage-line mod draws the status line and the workflow stage under the
-# prompt (claude/mods/stage-line). A mod has no settings.json key to load it
-# from a local folder, so it rides the same wrapper. Skipped when the folder is
-# missing, for the same reason the prompt is.
-MOD="$HOME/.dotfiles/claude/mods/stage-line"
-if [ -d "$MOD" ]; then
-  set -- --plugin-dir "$MOD" "$@"
-fi
+# Every folder in claude/mods with a plugin.json is a mod: stage-line draws the
+# status rows, last-prompt pins the last prompt above the input. A mod has no
+# settings.json key to load it from a local folder, so each rides the same
+# wrapper with its own --plugin-dir. No folder adds no flag, for the same
+# reason a missing prompt file is skipped.
+for MOD in "$HOME"/.dotfiles/claude/mods/*; do
+  if [ -f "$MOD/.claude-plugin/plugin.json" ]; then
+    set -- --plugin-dir "$MOD" "$@"
+  fi
+done
 
 # A missing or unreadable prompt file must not take Claude down with it.
 if [ ! -r "$PROMPT" ]; then
