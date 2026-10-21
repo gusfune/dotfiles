@@ -1,0 +1,4 @@
+{
+  "description": "The dev-urls hooks module",
+  "modules": ["./register.ts"]
+}

@@ -78,6 +78,7 @@ const register: Register = (on) => {
       Text({ color: "cyanBright", wrap: "truncate-end", children })
     const panel = Box({
       key: "last-prompt-panel",
+      marginTop: 1,
       flexDirection: "column",
       children: [
         Box({ key: "last-prompt-title", children: edge(top) }),
@@ -98,7 +99,9 @@ const register: Register = (on) => {
         edge(bottom),
       ],
     })
-    return Box({ flexDirection: "column", children: [panel, kept] })
+    // Appended, so the pin sits nearest the prompt and a band that prepends
+    // (dev-urls) lands above it whichever mod loads first.
+    return Box({ flexDirection: "column", children: [kept, panel] })
   })
 }
 

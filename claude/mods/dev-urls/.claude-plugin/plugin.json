@@ -1,0 +1,7 @@
+{
+  "name": "dev-urls",
+  "version": "0.1.0",
+  "description": "Lists the dev servers this worktree runs, and the test URLs pinned for its branch, above the LAST WORDS band",
+  "author": { "name": "Gus Fune" },
+  "types": "./types/index.d.ts"
+}
