@@ -57,6 +57,7 @@ into `$HOME` by `script/setup`. Modeled on
 | `claude/statusline.sh`      | `~/.claude/statusline.sh`; a repo-internal symlink into `claude/sbx-kit/files/home/.claude/`. Sandbox only — the host uses the mod below |
 | `claude/mods/stage-line/`   | **NOT** symlinked — loaded by `bin/claude` with `--plugin-dir` (see [Stage-line mod](#stage-line-mod))                    |
 | `claude/mods/last-prompt/`  | **NOT** symlinked — loaded by `bin/claude` with `--plugin-dir` (see [Last-prompt mod](#last-prompt-mod))                  |
+| `claude/mods/dev-urls/`     | **NOT** symlinked — loaded by `bin/claude` with `--plugin-dir` (see [Dev-urls mod](#dev-urls-mod))                        |
 | `claude/sbx-kit/`           | not symlinked — an sbx mixin kit, passed to `sbx run --kit` (see [Sandbox (sbx) Claude prefs](#sandbox-sbx-claude-prefs)) |
 | `mise/global.toml`          | **NOT** symlinked — copy manually (both ways); one file for both machines via `os` filters                                |
 | `kimi-code/config.toml`     | `~/.kimi-code/config.toml`                                                                                                |
@@ -306,6 +307,19 @@ API has no site at the top of the window, so that band is the closest place
 that stays on screen. Its [README](./claude/mods/last-prompt/README.md) has
 the rules and the checks.
 
+
+### Dev-urls mod
+
+`claude/mods/dev-urls/` lists the dev servers this worktree runs, and the test
+URLs pinned for its branch, as links in a `DEV URLS` panel above `LAST WORDS`.
+A server counts when its cwd is inside the worktree, so each `git worktree`
+shows only its own. The model pins URLs with the mod's `pin_test_url` tool.
+Its [README](./claude/mods/dev-urls/README.md) has the rules and the checks.
+
+Two mods hook the same band, and the engine does not document the order of
+`--plugin-dir` plugins. So the order comes from the trees: dev-urls puts its
+panel before what the hook chain returns, and last-prompt puts its panel
+after it. Keep both that way, or `LAST WORDS` can land above `DEV URLS`.
 ### Adding new mise config
 
 `mise/global.toml` is the global tool list. **The filename matters.** It cannot
