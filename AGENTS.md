@@ -81,23 +81,25 @@ chflags uchg ~/.orca/agent-hooks/claude-statusline.installed   # undo: chflags n
 
 ### Claude Plus system prompt
 
-`claude/claude-plus.md` replaces the built-in prompt. The real file is
+On the host, Claude Plus is the `baerskin:Claude Plus` output style from the
+baerskin plugin (`"outputStyle"` in `claude/settings.json`). Plugin styles
+need the `plugin:` prefix; the bare name loads nothing. Update it with
+`claude plugin update baerskin@baerskin-config`.
+
+`claude/claude-plus.md` is an older copy, used only by the sandbox
+(`sbxme`) and pi. The real file is
 `claude/sbx-kit/files/home/.claude/claude-plus.md`; the `claude/` path is a
 symlink to it, because `sbx kit validate` rejects symlinks that leave the kit.
 
-Claude Code has no persistent setting for a replacement prompt, so
-`bin/claude` shadows the real launcher on `PATH` and always adds
-`--system-prompt-file`. `~/.dotfiles/bin` is prepended in **both**
-`zshenv.sh` and `zprofile.sh`, because `~/.local/bin` holds a competing
-`claude`. Remove either line and some shells get the stock prompt. Check:
+`bin/claude` shadows the real launcher on `PATH` to load the mods.
+`~/.dotfiles/bin` is prepended in **both** `zshenv.sh` and `zprofile.sh`,
+because `~/.local/bin` holds a competing `claude`. Check:
 
 ```bash
 zsh -lic 'command -v claude'; zsh -ic 'command -v claude'; zsh -c 'command -v claude'
 ```
 
-Limits: an absolute path to the real binary bypasses the wrapper, bash shells
-are not covered, and subagents keep their own prompt. The `caveman` plugin
-stays off; it conflicts with Claude Plus.
+The `caveman` plugin stays off; it conflicts with Claude Plus.
 
 ### Mods
 

@@ -1,18 +1,7 @@
 #!/bin/sh
-# Claude Code always runs with the Claude Plus prompt as its *whole* system
-# prompt. There is no settings.json key and no env var for this: --system-prompt-file
-# is the only full replacement, and it is per-invocation. So we shadow the real
-# binary on PATH (see path_prepend in zprofile.sh) and add the flag every time.
-#
-# There is no opt-out switch. The A/B against the stock prompt is done and
-# Claude Plus won; if you ever want the stock prompt back, call the real binary
-# by its absolute path.
-#
-# The flag is harmless on subcommands (mcp, plugin, update, --version all tested),
-# so no argument sniffing is needed. Ship of Theseus, but only the figurehead
-# was replaced.
-
-PROMPT="$HOME/.dotfiles/claude/claude-plus.md"
+# Shadows the real binary on PATH (see path_prepend in zshenv.sh and
+# zprofile.sh) to load the local mods with --plugin-dir. The Claude Plus prompt
+# comes from the baerskin:Claude Plus output style in settings.json.
 
 # Never resolve "claude" through PATH here — that is this script, and it would
 # fork-bomb the machine rather than answer your question.
@@ -54,32 +43,26 @@ if [ -z "$REAL" ] && command -v mise >/dev/null 2>&1; then
 fi
 
 if [ -z "$REAL" ]; then
-  echo "claude: real binary not found behind the Claude Plus wrapper" >&2
+  echo "claude: real binary not found behind the dotfiles wrapper" >&2
   exit 127
 fi
 
-# Belt and braces: if something did bounce back through us, the flag is already
-# in "$@". Passing it twice is a usage error, and re-entering is a fork bomb.
-if [ -n "$CLAUDE_PLUS_ACTIVE" ]; then
+# If something bounced back through us, the mod flags are already in "$@", and
+# re-entering is a fork bomb.
+if [ -n "$CLAUDE_WRAPPER_ACTIVE" ]; then
   exec "$REAL" "$@"
 fi
-export CLAUDE_PLUS_ACTIVE=1
+export CLAUDE_WRAPPER_ACTIVE=1
 
 # Every folder in claude/mods with a plugin.json is a mod: stage-line draws the
 # status rows, last-prompt pins the last prompt above the input, dev-urls lists
 # this worktree's dev servers above that. A mod has no
 # settings.json key to load it from a local folder, so each rides the same
-# wrapper with its own --plugin-dir. No folder adds no flag, for the same
-# reason a missing prompt file is skipped.
+# wrapper with its own --plugin-dir. No folder adds no flag.
 for MOD in "$HOME"/.dotfiles/claude/mods/*; do
   if [ -f "$MOD/.claude-plugin/plugin.json" ]; then
     set -- --plugin-dir "$MOD" "$@"
   fi
 done
 
-# A missing or unreadable prompt file must not take Claude down with it.
-if [ ! -r "$PROMPT" ]; then
-  exec "$REAL" "$@"
-fi
-
-exec "$REAL" --system-prompt-file "$PROMPT" "$@"
+exec "$REAL" "$@"
