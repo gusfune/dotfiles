@@ -86,8 +86,15 @@ baerskin plugin (`"outputStyle"` in `claude/settings.json`). Plugin styles
 need the `plugin:` prefix; the bare name loads nothing. Update it with
 `claude plugin update baerskin@baerskin-config`.
 
-`claude/claude-plus.md` is an older copy, used only by the sandbox
-(`sbxme`) and pi. The real file is
+`claude/claude-plus.md` is a copy of that style for the sandbox (`sbxme`) and
+pi, which cannot load the plugin. After a plugin update, copy it again:
+
+```bash
+cp ~/.claude/plugins/cache/baerskin-config/baerskin/<version>/output-styles/claude-plus.md \
+   claude/sbx-kit/files/home/.claude/claude-plus.md
+```
+
+The real file is
 `claude/sbx-kit/files/home/.claude/claude-plus.md`; the `claude/` path is a
 symlink to it, because `sbx kit validate` rejects symlinks that leave the kit.
 
