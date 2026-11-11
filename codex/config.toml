@@ -1,15 +1,51 @@
 model = "gpt-6-astra"
 personality = "pragmatic"
-model_reasoning_effort = "high"
+model_reasoning_effort = "medium"
 plan_mode_reasoning_effort = "xhigh"
+service_tier = "default"
 
 # Per-machine bits (notify path, [projects.*] trust_level blocks) live in
 # ~/.codex/config.local.toml or are appended manually after install.
 # Codex does not support [include]; the installer does NOT symlink this file
 # to avoid clobbering your real machine config.
 
+[notice]
+hide_rate_limit_model_nudge = true
+
 [notice.model_migrations]
 gpt-5-codex = "gpt-5.3-codex"
 
 [plugins."github@openai-curated"]
+enabled = true
+[plugins."browser@openai-bundled"]
+enabled = true
+
+[plugins."documents@openai-primary-runtime"]
+enabled = true
+
+[plugins."pdf@openai-primary-runtime"]
+enabled = true
+
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = true
+
+[plugins."presentations@openai-primary-runtime"]
+enabled = true
+
+[plugins."template-creator@openai-primary-runtime"]
+enabled = true
+
+[plugins."visualize@openai-bundled"]
+enabled = true
+
+[plugins."codex-app-tools@openai-bundled"]
+enabled = true
+
+[plugins."unified-computer-use@openai-bundled"]
+enabled = true
+
+[plugins."computer-use@openai-bundled"]
+enabled = true
+
+[plugins."code-review@openai-bundled"]
 enabled = true
