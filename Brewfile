@@ -6,6 +6,7 @@ tap "anomalyco/tap"                 # → opencode
 tap "archivebox/archivebox"         # → archivebox
 tap "buo/cask-upgrade"              # `brew cu` — useful
 tap "cloudflare/cloudflare"         # → cloudflared
+tap "controlplane-com/cpln"         # → cpln
 tap "docker/tap"                    # → sbx
 tap "hashicorp/tap"                 # → hcp
 tap "hookdeck/hookdeck"             # → hookdeck
@@ -20,6 +21,8 @@ tap "supabase/tap"                  # → supabase
 brew "awscli"                       # AWS CLI
 brew "bash"                         # bash 5.x (macOS stock bash is 3.2)
 brew "cloudflared"                  # Cloudflare tunnel client
+brew "cmake"                        # Cross-platform make
+brew "controlplane-com/cpln/cpln"   # Control Plane CLI
 brew "cookiecutter"                 # Project scaffolding from templates
 brew "curl"                         # curl with newer TLS / HTTP3
 brew "doppler"                      # Secrets manager
@@ -31,6 +34,7 @@ brew "gnupg"                        # GPG
 brew "go"                           # Go toolchain
 brew "hashicorp/tap/hcp"            # HashiCorp Cloud Platform CLI
 brew "hf"                           # HuggingFace CLI
+brew "hookdeck"                     # Forward webhooks to a local server
 brew "htop"                         # Process viewer
 brew "httrack"                      # Website mirroring
 brew "kimi-code"                    # Kimi Code CLI; config in kimi-code/
@@ -41,7 +45,9 @@ brew "mas"                          # Mac App Store CLI
 brew "midnight-commander"           # `mc` — TUI file manager
 brew "mise"                         # Tool version manager; shims on PATH via .zshenv
 brew "mole"                         # Disk cleanup tool
+brew "neonctl"                      # Neon Postgres CLI
 brew "neovim"                       # `nvim` — the EDITOR fallback in zshenv
+brew "ninja"                        # Small build system for gyp or CMake
 brew "platformio"                   # Embedded dev toolchain (Pico / ESP)
 brew "pnpm"                         # Node package manager
 brew "poetry"                       # Python dependency manager
@@ -50,10 +56,12 @@ brew "python@3.12"                  # Python
 brew "rclone"                       # Cloud storage sync
 brew "reattach-to-user-namespace"   # Fixes pbcopy inside tmux
 brew "ripgrep"                      # `rg` — fast grep
+brew "scons"                        # Python-based build tool
 brew "stripe-cli"                   # Stripe CLI
 brew "swiftlint"                    # Swift linter (iOS / macOS native)
 brew "thefuck"                      # Command corrector; sourced in zshrc
 brew "tree"                         # Directory tree view
+brew "typescript-language-server"   # TypeScript LSP server
 brew "uv"                           # Fast Python package manager
 brew "watchman"                     # File watcher (RN/Metro)
 brew "wget"                         # Non-interactive downloader (used by scripts)
@@ -70,6 +78,7 @@ brew "supabase/tap/supabase"        # Supabase CLI
 # ----- GUI apps (casks) -----
 cask "1password"                    # Password manager
 cask "1password-cli"                # `op` CLI
+cask "actual"                       # Local-first budgeting app
 cask "antigravity-cli"              # Antigravity CLI
 cask "arduino-ide"                  # Arduino IDE
 cask "autodesk-fusion"              # Fusion 360 — CAD
@@ -96,6 +105,7 @@ cask "freecad"                      # Parametric CAD
 cask "gcloud-cli"                   # Google Cloud CLI
 cask "ghostty"                      # Terminal emulator
 cask "github"                       # GitHub Desktop (redundant with gh CLI + GitLens?)
+cask "godot"                        # 2D and 3D game engine
 cask "google-chrome"                # Chrome
 cask "granola"                      # Meeting notes
 cask "imageoptim"                   # Image compression
