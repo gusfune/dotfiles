@@ -30,7 +30,16 @@
 # it touches, and whether it preserves an `os` filter is unverified. Check with
 # `mise config get tools.node` on the Omarchy box after a wrapper has run.
 #
-# `mise settings` is empty on purpose, so there is no settings.toml to carry.
+# Settings live in the [settings] table below, so there is still no
+# settings.toml to carry.
+#
+# Auto-update: `tool_update.global_auto` lets every tool here upgrade itself
+# within its request — `latest` moves, the exact `ruby` pin never does. With no
+# `mise activate`, the check runs when a shim launches the tool, at most once
+# per `tool_update.check_duration`. It skips CI, offline runs and tools that
+# are not installed. `minimum_release_age` matches the 7-day policy npm, bun,
+# pnpm and uv already enforce, so mise is not the one door left open.
+# @see https://mise.jdx.dev/dev-tools/#automatic-tool-updates
 #
 # Why macOS only takes node and ruby: the shims are *prepended* there (see the
 # comment in .zshenv), so an unfiltered entry would put mise in front of
@@ -47,6 +56,10 @@
 # `ruby` is pinned rather than `latest` because it inherits rbenv's only
 # version. mise prefers a precompiled Ruby and falls back to a ruby-build
 # compile, so a `latest` bump can cost half an hour of CPU.
+
+[settings]
+minimum_release_age = "7d"
+tool_update.global_auto = true
 
 [tools]
 bun = { version = "latest", os = ["linux"] }
