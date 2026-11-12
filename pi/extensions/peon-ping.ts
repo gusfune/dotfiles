@@ -49,7 +49,7 @@ export default function (pi: ExtensionAPI) {
 		}
 	};
 
-	// Same gate as superset-hooks: print/JSON modes (subagents, helpers)
+	// Print/JSON modes (subagents, helpers)
 	// must not play sounds.
 	const skip = (ctx: { hasUI?: boolean }) => ctx.hasUI === false;
 
