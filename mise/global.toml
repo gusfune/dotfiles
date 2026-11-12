@@ -68,7 +68,7 @@ codex = { version = "latest", os = ["linux"] }
 gh = { version = "latest", os = ["linux"] }
 go = { version = "latest", os = ["linux"] }
 node = "latest"
-pnpm = { version = "latest", os = ["linux"] }
+pnpm = { version = "12", os = ["linux"] }
 prettier = { version = "latest", os = ["linux"] }
 python = { version = "latest", os = ["linux"] }
 ruby = { version = "3.4.1", os = ["macos"] }

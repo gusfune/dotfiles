@@ -49,7 +49,7 @@ brew "neonctl"                      # Neon Postgres CLI
 brew "neovim"                       # `nvim` — the EDITOR fallback in zshenv
 brew "ninja"                        # Small build system for gyp or CMake
 brew "platformio"                   # Embedded dev toolchain (Pico / ESP)
-brew "pnpm"                         # Node package manager
+brew "pnpm"                         # Node package manager (12.x; Linux pins it in mise)
 brew "poetry"                       # Python dependency manager
 brew "poppler"                      # PDF utilities (for pdftotext, pdfimages)
 brew "python@3.12"                  # Python
