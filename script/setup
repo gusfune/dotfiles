@@ -122,7 +122,7 @@ link_if_needed "${HOME}/.kimi-code/statusline.sh" "${DOTFILESDIR}/kimi-code/stat
 
 # Pi (pi-coding-agent) extensions and prompt templates. Linked per file, never
 # per directory: ~/.pi/agent/extensions also holds locally-installed extensions
-# (superset-hooks, orca-*) that a dir link would hide.
+# (orca-*) that a dir link would hide.
 for PIEXT in "${DOTFILESDIR}"/pi/extensions/*.ts; do
   [[ -e "${PIEXT}" ]] || continue
   link_if_needed "${HOME}/.pi/agent/extensions/$(basename "${PIEXT}")" "${PIEXT}"
