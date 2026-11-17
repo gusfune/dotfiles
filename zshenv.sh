@@ -16,6 +16,14 @@ else
 fi
 export SUDO_EDITOR="$EDITOR"
 
+# Claude Code env. Here, not in .zprofile, so sessions started outside a login
+# shell (GUI apps, VS Code tasks, Orca agents, scripts) get it too.
+export USER_TYPE="ant"
+export CLAUDE_CODE_DISABLE_1M_CONTEXT=1
+export CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1
+export CLAUDE_CODE_DISABLE_AUTO_MEMORY=1
+export CLAUDE_CODE_SUBAGENT_MODEL=sonnet
+
 # Rust toolchain (needed by non-interactive cargo scripts).
 [ -s "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 
