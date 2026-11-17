@@ -38,13 +38,6 @@ fi
 export HOMEBREW_DOWNLOAD_CONCURRENCY=auto
 export ZSH_DISABLE_COMPFIX=true
 
-# Claude Code env (MUST be exported to reach child processes).
-export USER_TYPE="ant"
-export CLAUDE_CODE_DISABLE_1M_CONTEXT=1
-export CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1
-export CLAUDE_CODE_DISABLE_AUTO_MEMORY=1
-export CLAUDE_CODE_SUBAGENT_MODEL=sonnet
-
 # Sentinel for .zshrc, which re-sources this file when a terminal skips the
 # login shell. HOMEBREW_PREFIX used to play this role and never latched on a
 # box without Homebrew, so .zprofile was re-sourced on every interactive shell.
