@@ -1,0 +1,4 @@
+{
+  "name": "claude-plus",
+  "description": "Injects the Claude Plus system prompt at session start."
+}

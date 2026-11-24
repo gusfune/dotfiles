@@ -1,0 +1,37 @@
+{
+  "peon-ping": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "./hook.sh SessionStart",
+        "timeout": 10
+      }
+    ],
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "./hook.sh UserPromptSubmit",
+        "timeout": 10
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "run_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./hook.sh PostToolUseFailure",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": "./hook.sh Stop",
+        "timeout": 10
+      }
+    ]
+  }
+}

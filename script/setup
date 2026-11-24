@@ -53,7 +53,7 @@ for DOTFILE in *; do
 
   # Dirs and files we never auto-link at the root level.
   case "${DOTFILE}" in
-    bin/|script/|claude/|codex/|ghostty/|kimi-code/|mise/|omarchy/|pi/|zsh/|.git/|*.md|*.txt|LICENSE|Archfile|Brewfile|vscode-extensions.txt)
+    antigravity/|bin/|script/|claude/|codex/|ghostty/|kimi-code/|mise/|omarchy/|pi/|zsh/|.git/|*.md|*.txt|LICENSE|Archfile|Brewfile|vscode-extensions.txt)
       continue
       ;;
   esac
@@ -103,11 +103,26 @@ if ! [[ "${HOMEDOTFILES}" -ef "${DOTFILESDIR}" ]]; then
   ln -sf "${DOTFILESDIR}" "${HOMEDOTFILES}"
 fi
 
-# Shared AGENTS doc: Claude, Codex and pi all read the same instructions.
+# Shared AGENTS doc: Claude, Codex, pi and Antigravity all read the same
+# instructions.
 AGENTS_GLOBAL="${DOTFILESDIR}/AGENTS-GLOBAL.md"
-link_if_needed "${HOME}/.claude/CLAUDE.md"    "${AGENTS_GLOBAL}"
-link_if_needed "${HOME}/.codex/AGENTS.md"     "${AGENTS_GLOBAL}"
-link_if_needed "${HOME}/.pi/agent/AGENTS.md"  "${AGENTS_GLOBAL}"
+link_if_needed "${HOME}/.claude/CLAUDE.md"         "${AGENTS_GLOBAL}"
+link_if_needed "${HOME}/.codex/AGENTS.md"          "${AGENTS_GLOBAL}"
+link_if_needed "${HOME}/.pi/agent/AGENTS.md"       "${AGENTS_GLOBAL}"
+link_if_needed "${HOME}/.gemini/config/AGENTS.md"  "${AGENTS_GLOBAL}"
+
+# Antigravity plugins. Linked per plugin: ~/.gemini/config/plugins also holds
+# plugins that `agy plugin install` puts there. Hooks go in plugins because
+# Orca rewrites ~/.gemini/config/hooks.json.
+for AGYPLUGIN in "${DOTFILESDIR}"/antigravity/plugins/*/; do
+  [[ -d "${AGYPLUGIN}" ]] || continue
+  link_if_needed "${HOME}/.gemini/config/plugins/$(basename "${AGYPLUGIN}")" "${AGYPLUGIN%/}"
+done
+
+# antigravity/settings.json is intentionally NOT symlinked: the CLI rewrites
+# it on start (0600, atomic replace) and adds trustedWorkspaces with real
+# paths. Copy by hand, both ways:
+#   cp antigravity/settings.json ~/.gemini/antigravity-cli/settings.json
 
 # Claude settings are intentionally NOT symlinked: Claude rewrites the live
 # file with per-machine state (autoMode.environment names real repos + paths)

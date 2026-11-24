@@ -1,0 +1,11 @@
+{
+  "claude-plus": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "./inject.sh",
+        "timeout": 10
+      }
+    ]
+  }
+}
