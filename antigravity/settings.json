@@ -1,0 +1,27 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/settings.json",
+  "agentMode": "accept-edits",
+  "allowNonWorkspaceAccess": true,
+  "altScreenMode": "always",
+  "colorScheme": "dark",
+  "enableTerminalSandbox": true,
+  "notifications": true,
+  "permissions": {
+    "allow": [
+      "command(bun)",
+      "command(find)",
+      "command(git)",
+      "command(grep)",
+      "command(ls)",
+      "command(mkdir)",
+      "command(npx tsc)",
+      "command(pwd)",
+      "command(tree)",
+      "command(wc)",
+      "command(yarn build)",
+      "command(yarn install)",
+      "command(yarn lint)"
+    ]
+  },
+  "toolPermission": "proceed-in-sandbox"
+}

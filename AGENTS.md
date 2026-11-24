@@ -1,8 +1,9 @@
 # AGENTS.md — maintaining this repo
 
 Repo-level rules for `~/Developer/dotfiles`. The global agent rules live in
-`AGENTS-GLOBAL.md`, linked into `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`
-and `~/.pi/agent/AGENTS.md`. Do not confuse the two.
+`AGENTS-GLOBAL.md`, linked into `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`,
+`~/.pi/agent/AGENTS.md` and `~/.gemini/config/AGENTS.md`. Do not confuse the
+two.
 
 ## Basics
 
@@ -29,8 +30,9 @@ and `~/.pi/agent/AGENTS.md`. Do not confuse the two.
 | `omarchy/hypr/*.lua`                              | `~/.config/hypr/` (Linux; five files, **not** `hyprland.lua`)         |
 | `omarchy/themes/*/`                               | `~/.config/omarchy/themes/<name>` (Linux, dir link)                   |
 | `kimi-code/*.toml`, `kimi-code/statusline.sh`     | `~/.kimi-code/`                                                       |
-| `AGENTS-GLOBAL.md`                                | the three global agent files above                                    |
+| `AGENTS-GLOBAL.md`                                | the four global agent files above                                     |
 | `pi/extensions/*.ts`, `pi/prompts/*.md`           | `~/.pi/agent/{extensions,prompts}/` (per-file links)                  |
+| `antigravity/plugins/*/`                          | `~/.gemini/config/plugins/<name>` (per-plugin dir links)              |
 | `claude/statusline.sh`                            | `~/.claude/statusline.sh` (sandbox only)                              |
 | `bin/claude`                                      | not linked; on `PATH` via `~/.dotfiles/bin`                           |
 | `claude/mods/*/`                                  | not linked; loaded by `bin/claude` with `--plugin-dir`                |
@@ -38,7 +40,8 @@ and `~/.pi/agent/AGENTS.md`. Do not confuse the two.
 
 **Copy by hand, both ways** (tools rewrite them with per-machine state):
 `claude/settings.json`, `codex/config.toml`, `mise/global.toml`,
-`pi/settings.json`, `pi/mcp.json`, `omarchy/shell.json`.
+`pi/settings.json`, `pi/mcp.json`, `omarchy/shell.json`,
+`antigravity/settings.json`.
 
 **Not installed** (run from the repo): `Brewfile`, `Archfile`,
 `vscode-extensions.txt`, `script/arch-bundle`, `script/omarchy-bootstrap`,
@@ -142,6 +145,30 @@ system prompt (`CLAUDE_PLUS_FILE` overrides the path). `extensions/peon-ping.ts`
 replaces the Claude hooks. `prompts/` ports the commit commands. Strip
 `deviceId` and `lastChangelogVersion` from `pi/settings.json`. Validate with
 `pi -p --no-tools "say ok"`.
+
+## Antigravity
+
+`antigravity/` ports the Claude setup to the Antigravity CLI (`agy`). The
+global rules come from `~/.gemini/config/AGENTS.md`. Two local plugins carry
+the rest:
+
+- `claude-plus` injects `claude/claude-plus.md` as a system message at
+  session start. It is not a rule file because Antigravity truncates rules
+  at 24 KB. `CLAUDE_PLUS_FILE` overrides the path.
+- `peon-ping` maps agy hook events to the Claude event names for `peon.sh`.
+
+Hooks go in plugins because Orca rewrites `~/.gemini/config/hooks.json`.
+Claude plugins are not linked; import them on each machine with
+`agy plugin import claude`.
+
+```bash
+cp ~/Developer/dotfiles/antigravity/settings.json ~/.gemini/antigravity-cli/settings.json  # repo -> home
+agy plugin validate antigravity/plugins/<name> && agy plugin list
+```
+
+Before you copy home → repo, strip `trustedWorkspaces`, `model` and
+one-off `command(...)` allow rules. `agentMode: "auto"` is not available on
+every account; the template uses `accept-edits`.
 
 ## mise
 
